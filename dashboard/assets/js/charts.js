@@ -389,7 +389,14 @@ export function indicatorHeatmap(divId, indicatorsWide, months = 24) {
   const codes = Object.keys(INDICATORS);
   const rows = indicatorsWide.slice(-months);
   const dates = rows.map((r) => r.date);
-  const z = codes.map((code) => rows.map((r) => r[`${code}_z`]));
+  // Coerce undefined/null to null so Plotly renders missing cells as gaps,
+  // not as yellow (midpoint color) that would result from implicit 0/NaN.
+  const z = codes.map((code) =>
+    rows.map((r) => {
+      const v = r[`${code}_z`];
+      return v === undefined || v === null ? null : +v;
+    })
+  );
   const labels = codes.map((c) => INDICATORS[c].label);
 
   const traces = [
@@ -402,7 +409,7 @@ export function indicatorHeatmap(divId, indicatorsWide, months = 24) {
       zmid: 0,
       zmin: -3,
       zmax: 3,
-      colorbar: { title: "z" },
+      colorbar: { title: "z-score", tickfont: { size: 10 } },
       hovertemplate: "%{x|%Y-%m}<br>%{y}: %{z:.2f}<extra></extra>",
     },
   ];
@@ -411,9 +418,10 @@ export function indicatorHeatmap(divId, indicatorsWide, months = 24) {
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
     font: { family: "var(--font-sans)", size: 11, color: "#475569" },
-    margin: { t: 10, r: 16, b: 40, l: 220 },
+    margin: { t: 10, r: 16, b: 40, l: 230 },
     xaxis: { type: "date", tickfont: { size: 10 } },
-    yaxis: { tickfont: { size: 10 } },
+    // reversed: Growth at top, Stress at bottom — matches pillar reading order
+    yaxis: { tickfont: { size: 10 }, autorange: "reversed" },
   };
 
   const el = document.getElementById(divId);

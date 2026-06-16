@@ -72,7 +72,7 @@ export const INDICATORS = {
     sign: "−",
   },
   i_pce_mom: {
-    label: "Core PCE Momentum",
+    label: "Core PCE Momentum (decel. = green)",
     pillar: "inflation",
     source: "PCEPILFE (FRED)",
     transform: "6-month change in YoY% → z-score",

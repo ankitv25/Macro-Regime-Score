@@ -79,43 +79,52 @@ Only the two genuine US contractions reach Contraction. Regime stability: **20 c
 
 ---
 
-## How to Rerun the Pipeline
+## How to Run / Update
 
 All inputs are from FRED (public API) and Yahoo Finance. No Bloomberg or paid data required.
 
-### 1. Install dependencies
+### Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Pull raw data from FRED
+### Monthly update — one command
 
 ```bash
-python src/pull_mrs_data.py
+python src/update_mrs.py
 ```
 
-Downloads the supplemental FRED series (IPMAN, STLFSI2, BAA10YM, PCES, services deflator) to `data/raw/fred/`. The main macro panel (`fred_rates_daily.csv`, `fred_macro_monthly.csv`, `fred_nfci_weekly.csv`, `fred_gdp_quarterly.csv`) should be pulled by a companion FRED pull script or placed in `data/raw/fred/` manually.
+This is the primary entry point. It runs the full pipeline in sequence, compares before/after state (regime change, new flags, drift watch, historical revisions), exports the dashboard JSON, and prints a structured summary with all alerts. Run it once a month after core PCE is released (~4 weeks after month-end).
 
-> **Data note:** All inputs are publicly available from FRED (api.stlouisfed.org) and Yahoo Finance. SPY total returns are downloaded via `yfinance`. FRED rate-limiting applies — the script includes retry logic with back-off.
+```
+Options:
+  --skip-pull    Skip FRED data pull (use existing files in data/raw/fred/)
+  --dry-run      Pull + process only — stop before writing monitoring tables
+```
 
-### 3. Build the monthly input panel
+After it completes, add an analyst note to `dashboard/data/commentary.json`, then commit and push:
 
 ```bash
-python src/process_mrs_inputs.py
+git add outputs/monitoring/ dashboard/data/
+git commit -m "MRS update: YYYY-MM (Regime: Neutral, z +0.03)"
+git push origin main
 ```
 
-Aligns all series to a monthly calendar, applies frequency conversions (daily → month-end, weekly → monthly average, quarterly → forward-filled), derives all transformed inputs, and writes:
-- `data/processed/mrs_inputs_monthly.csv` — 317 × 57 monthly panel, 2000-01 to present
-- `outputs/mrs_validation_log.md` — data quality and coverage report
+The dashboard at `https://ankitv25.github.io/Macro-Regime-Score/` auto-deploys within ~1 minute.
 
-### 4. Score and build monitoring tables
+### Individual scripts (reference)
+
+The update agent calls these in order — run individually only for debugging:
 
 ```bash
-PYTHONPATH=src python src/mrs_monitoring_store.py
+python src/pull_mrs_data.py            # Step 1: pull supplemental FRED series
+python src/process_mrs_inputs.py       # Step 2: build monthly input panel
+PYTHONPATH=src python src/mrs_monitoring_store.py  # Step 3: score + monitoring tables
+python src/export_dashboard_data.py    # Step 4: export JSON for dashboard
 ```
 
-Runs the v2.1 engine, computes all derived metrics (momentum, percentile, streak, flags, curve environment, drift watch), and writes:
+Outputs written by Step 3:
 - `outputs/monitoring/mrs_composite_history.csv` — full composite history
 - `outputs/monitoring/mrs_pillar_history.csv` — full pillar history
 - `outputs/monitoring/mrs_indicator_history.csv` — full indicator history

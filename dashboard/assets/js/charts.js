@@ -435,3 +435,156 @@ export function indicatorHeatmap(divId, indicatorsWide, months = 24) {
 
   Plotly.newPlot(divId, traces, layout, PLOTLY_CONFIG);
 }
+
+// ─── Scenario: 12-month forecast overlay chart ──────────────────────────────
+export function scenarioForecastChart(divId, historical, todayMark, baseline, scenarioPaths) {
+  const lastBaseline = baseline[baseline.length - 1];
+
+  // Shaded forecast zone
+  const forecastZone = {
+    type: "rect", xref: "x", yref: "paper",
+    x0: todayMark.date, x1: lastBaseline.date,
+    y0: 0, y1: 1,
+    fillcolor: "rgba(0,0,0,0.03)",
+    line: { width: 0 }, layer: "below",
+  };
+
+  // Threshold dotted lines
+  const thresholds = [3.35, 2.70, 2.00].map(y => ({
+    type: "line", xref: "paper", yref: "y",
+    x0: 0, x1: 1, y0: y, y1: y,
+    line: { color: "#cbd5e1", width: 1, dash: "dot" },
+  }));
+
+  const traces = [];
+
+  // Historical line
+  traces.push({
+    x: historical.map(r => r.date),
+    y: historical.map(r => r.display_score),
+    type: "scatter", mode: "lines",
+    name: "MRS historical",
+    line: { color: "#0f172a", width: 1.8 },
+    hovertemplate: "%{x|%b %Y}<br>MRS %{y:.2f}<extra></extra>",
+  });
+
+  // Baseline (dotted)
+  traces.push({
+    x: [todayMark.date, ...baseline.map(r => r.date)],
+    y: [todayMark.display_score, ...baseline.map(r => r.display_score)],
+    type: "scatter", mode: "lines",
+    name: "Baseline (no shock)",
+    line: { color: "#94a3b8", width: 1.5, dash: "dot" },
+    hovertemplate: "Baseline<br>%{x|%b %Y}: %{y:.2f}<extra></extra>",
+  });
+
+  // Scenario paths
+  for (const { label, color, path } of scenarioPaths) {
+    traces.push({
+      x: [todayMark.date, ...path.map(r => r.date)],
+      y: [todayMark.display_score, ...path.map(r => r.display_score)],
+      type: "scatter", mode: "lines+markers",
+      name: label,
+      line: { color, width: 2.5 },
+      marker: { size: 5, color },
+      hovertemplate: `${label}<br>%{x|%b %Y}: %{y:.2f}<extra></extra>`,
+    });
+  }
+
+  // Today marker (on top)
+  traces.push({
+    x: [todayMark.date],
+    y: [todayMark.display_score],
+    type: "scatter", mode: "markers",
+    name: "Today",
+    marker: {
+      color: REGIME_COLORS[todayMark.regime] || "#0f172a",
+      size: 11, symbol: "circle",
+      line: { color: "#fff", width: 2 },
+    },
+    hovertemplate: `Today · MRS ${todayMark.display_score?.toFixed(2)}<extra></extra>`,
+    showlegend: false,
+  });
+
+  const layout = {
+    margin: { t: 10, r: 90, b: 50, l: 45 },
+    height: 420,
+    shapes: [forecastZone, ...thresholds],
+    annotations: [
+      { xref: "paper", yref: "y", x: 1.01, y: 3.35, text: "Expansion",   showarrow: false, xanchor: "left", font: { size: 9, color: "#64748b" } },
+      { xref: "paper", yref: "y", x: 1.01, y: 2.70, text: "Neutral",     showarrow: false, xanchor: "left", font: { size: 9, color: "#64748b" } },
+      { xref: "paper", yref: "y", x: 1.01, y: 2.00, text: "Slowdown",    showarrow: false, xanchor: "left", font: { size: 9, color: "#64748b" } },
+      { xref: "paper", yref: "y", x: 1.01, y: 1.55, text: "Contraction", showarrow: false, xanchor: "left", font: { size: 9, color: "#64748b" } },
+      { xref: "x", yref: "paper", x: todayMark.date, y: 1.0, text: "Today",
+        showarrow: false, xanchor: "center", yanchor: "bottom", font: { size: 9, color: "#475569" }, yshift: 4 },
+    ],
+    xaxis: { type: "date", tickformat: "%b '%y", showgrid: false, tickfont: { size: 10 } },
+    yaxis: {
+      range: [1, 5],
+      tickvals: [1.0, 2.00, 2.70, 3.35, 5.0],
+      ticktext: ["1", "2.0", "2.7", "3.35", "5"],
+      showgrid: true, gridcolor: "#f1f5f9", tickfont: { size: 10 },
+    },
+    legend: { orientation: "h", x: 0, y: -0.18, font: { size: 10 } },
+    plot_bgcolor: "#ffffff",
+    paper_bgcolor: "#ffffff",
+    font: { family: "var(--font-sans)", size: 11, color: "#1e293b" },
+  };
+
+  Plotly.react(divId, traces, layout, PLOTLY_CONFIG);
+}
+
+// ─── Scenario: pillar comparison bar chart ───────────────────────────────────
+export function scenarioPillarChart(divId, pillarsToday, pillarsBaseline6, pillarsScenario, scenColor) {
+  const ORDER  = ["growth", "credit", "stress", "liquidity", "inflation"];
+  const labels = ORDER.map(id => PILLARS[id].label);
+  const toArr  = pMap => ORDER.map(id => pMap?.[id] != null ? +pMap[id] : 0);
+
+  // Convert hex to rgba
+  const hexToRgba = (hex, a) => {
+    const n = parseInt(hex.replace("#", ""), 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+  };
+  const scenRgba = scenColor?.startsWith("#") ? hexToRgba(scenColor, 0.85) : (scenColor || "rgba(198,40,40,0.85)");
+
+  const traces = [
+    {
+      type: "bar", orientation: "h", name: "Today",
+      x: toArr(pillarsToday), y: labels,
+      marker: { color: "rgba(148,163,184,0.55)", line: { width: 0 } },
+      hovertemplate: "%{y}: %{x:.2f}z<extra>Today</extra>",
+    },
+    {
+      type: "bar", orientation: "h", name: "Baseline T+6",
+      x: toArr(pillarsBaseline6), y: labels,
+      marker: { color: "rgba(14,165,233,0.55)", line: { width: 0 } },
+      hovertemplate: "%{y}: %{x:.2f}z<extra>Baseline T+6</extra>",
+    },
+    {
+      type: "bar", orientation: "h", name: "Scenario",
+      x: toArr(pillarsScenario), y: labels,
+      marker: { color: scenRgba, line: { width: 0 } },
+      hovertemplate: "%{y}: %{x:.2f}z<extra>Scenario</extra>",
+    },
+  ];
+
+  const layout = {
+    barmode: "overlay",
+    margin: { t: 5, r: 20, b: 40, l: 130 },
+    height: 220,
+    xaxis: {
+      range: [-3, 3],
+      zeroline: true, zerolinecolor: "#94a3b8", zerolinewidth: 1.5,
+      showgrid: true, gridcolor: "#f1f5f9",
+      tickformat: ".1f", tickfont: { size: 10 },
+    },
+    yaxis: { automargin: true, tickfont: { size: 10 } },
+    legend: { orientation: "h", x: 0, y: -0.3, font: { size: 10 } },
+    bargap: 0.4,
+    plot_bgcolor: "#ffffff",
+    paper_bgcolor: "#ffffff",
+    font: { family: "var(--font-sans)", size: 11, color: "#1e293b" },
+  };
+
+  Plotly.react(divId, traces, layout, PLOTLY_CONFIG);
+}

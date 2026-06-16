@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>MRS — Scenario Analysis</title>
 <link rel="stylesheet" href="assets/css/style.css" />
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 </head>
 <body class="app">
 
@@ -21,78 +22,99 @@
 
 <main class="db-grid">
 
-  <!-- Disclaimer -->
-  <section class="card span-12 scen-disclaimer">
-    <strong>These are stress tests, not forecasts.</strong>
-    GFC and COVID scenarios show the exact indicator z-scores recorded during those episodes —
-    applied to the current framework to answer: <em>"what would the MRS read if conditions matched
-    that period today?"</em> The Custom scenario and Playground let you define your own thesis.
-    All computation is live in your browser using the same weights as the production model.
-  </section>
-
-  <!-- 3 Scenario cards -->
-  <section class="card span-4 scen-card" id="card-gfc">
-    <div class="scen-head">
-      <span class="scen-badge scen-badge-red">GFC 2008</span>
-      <span class="scen-period">December 2008 · trough</span>
-    </div>
-    <p class="scen-desc">Credit markets froze, equity markets fell −57%, Fed cut to near-zero.
-    The worst US financial crisis since the Depression — and the only episode where the MRS
-    reached Contraction without ambiguity.</p>
-    <div class="scen-composite" id="gfc-composite"></div>
-    <div class="scen-pillars" id="gfc-pillars"></div>
-    <table class="dtable scen-table" id="gfc-table"></table>
-  </section>
-
-  <section class="card span-4 scen-card" id="card-covid">
-    <div class="scen-head">
-      <span class="scen-badge scen-badge-red">COVID 2020</span>
-      <span class="scen-period">March 2020 · trough</span>
-    </div>
-    <p class="scen-desc">Pandemic lockdowns triggered the sharpest output collapse in history.
-    SPY fell −34% in 23 days. A brief but severe Contraction — primarily a Growth and Stress
-    shock rather than a credit crisis.</p>
-    <div class="scen-composite" id="covid-composite"></div>
-    <div class="scen-pillars" id="covid-pillars"></div>
-    <table class="dtable scen-table" id="covid-table"></table>
-  </section>
-
-  <section class="card span-4 scen-card" id="card-custom">
-    <div class="scen-head">
-      <span class="scen-badge scen-badge-blue">Custom</span>
-      <span class="scen-period">Your scenario · edit below</span>
-    </div>
-    <p class="scen-desc">Start from today's readings. Enter any z-score (−3 to +3) for each
-    indicator. The composite updates live. Use this to test your own macro thesis or a
-    specific risk event.</p>
-    <div class="scen-composite" id="custom-composite"></div>
-    <div class="scen-pillars" id="custom-pillars"></div>
-    <table class="dtable scen-table" id="custom-table"></table>
-  </section>
-
-  <!-- Playground -->
+  <!-- Scenario selector -->
   <section class="card span-12">
     <div class="card-head">
-      <h2>Playground — live composite</h2>
-      <span class="card-sub">drag any indicator to see regime impact in real time · starts from today's actual readings</span>
+      <h2>Scenario selector</h2>
+      <span class="card-sub">click a scenario to project its 12-month MRS path · historical replays use delta-replay from today's composite</span>
     </div>
-    <div class="playground-layout">
-      <div class="playground-sliders" id="playground-sliders"></div>
-      <div class="playground-result" id="playground-result"></div>
+    <div class="sv2-selector" id="sv2-selector"></div>
+  </section>
+
+  <!-- Main 12-month forecast chart -->
+  <section class="card span-12">
+    <div class="card-head">
+      <h2>MRS path · 5-year history + 12-month scenario forecast</h2>
+      <span class="card-sub">shaded zone = 12-month forecast horizon · dotted = baseline (no shock) · solid = scenario path</span>
     </div>
-    <div style="margin-top:0.5rem">
-      <button class="pg-btn" id="pg-reset">Reset to today</button>
-      <button class="pg-btn pg-btn-secondary" id="pg-load-gfc">Load GFC</button>
-      <button class="pg-btn pg-btn-secondary" id="pg-load-covid">Load COVID</button>
+    <div id="sv2-forecast-chart" class="chart-xl"></div>
+    <p class="chart-caption">
+      <strong>Baseline</strong> assumes each pillar mean-reverts 8%/month toward neutral — no shock continuation.
+      <strong>Scenario path</strong> applies structured pillar shocks that build linearly to peak, then persist or fade per scenario design.
+      Display scale 1–5 = composite z + 3. Thresholds: 3.35 Expansion · 2.70 Neutral · 2.00 Slowdown.
+    </p>
+  </section>
+
+  <!-- Narrative + pillar chart (left) | Indicator table (right) -->
+  <section class="card span-5" style="align-self:start">
+    <div class="card-head">
+      <h2>Scenario narrative</h2>
+      <span class="card-sub" id="sv2-active-label">Select a scenario above</span>
     </div>
+    <div id="sv2-narrative">
+      <p class="sv2-placeholder">Select a scenario to see the macro thesis, pillar-level impact, and risk-asset implications.</p>
+    </div>
+    <div class="card-divider" style="margin-top:0.75rem"></div>
+    <div class="card-head" style="margin-top:0.5rem">
+      <h2>Pillar impact vs baseline</h2>
+      <span class="card-sub">gray = today · blue = baseline T+6 · colored = scenario peak</span>
+    </div>
+    <div id="sv2-pillar-chart"></div>
+  </section>
+
+  <section class="card span-7" style="align-self:start">
+    <div class="card-head">
+      <h2>Indicator detail</h2>
+      <span class="card-sub">z-scores · today → baseline T+6 → scenario → Δ vs today</span>
+    </div>
+    <table class="dtable sv2-ind-table" id="sv2-ind-table">
+      <thead>
+        <tr>
+          <th>Indicator</th>
+          <th class="num">Today</th>
+          <th class="num">Baseline T+6</th>
+          <th class="num">Scenario</th>
+          <th class="num">Δ</th>
+        </tr>
+      </thead>
+      <tbody id="sv2-ind-tbody">
+        <tr><td colspan="5" class="sv2-placeholder" style="padding:1rem 0.55rem">Select a scenario to populate this table.</td></tr>
+      </tbody>
+    </table>
+    <p class="chart-caption" id="sv2-table-caption"></p>
+  </section>
+
+  <!-- Custom stress builder (shown only when Custom Builder selected) -->
+  <section class="card span-12" id="sv2-custom-section" style="display:none">
+    <div class="card-head">
+      <h2>Custom stress builder</h2>
+      <span class="card-sub">set peak shock per pillar · adjust timing · chart and table update live</span>
+    </div>
+    <div class="sv2-custom-layout">
+      <div>
+        <p class="sv2-custom-desc">
+          Set the peak shock for each pillar (+ = favorable, − = adverse).
+          The shock phases in linearly from 0 at T+0 to full magnitude at the peak month, then follows the selected decay path.
+        </p>
+        <div id="sv2-custom-sliders"></div>
+      </div>
+      <div id="sv2-custom-timing"></div>
+    </div>
+  </section>
+
+  <!-- Methodology note -->
+  <section class="card span-12 sv2-method-note">
+    <strong>How scenarios work:</strong>
+    Named macro scenarios apply structured pillar-level shocks that phase in linearly from 0 to peak magnitude over the scenario timeline, then persist or fade.
+    Historical scenarios (GFC, COVID) use <em>delta-replay</em> — the actual composite path from each episode anchored to today's composite,
+    answering "what would have happened if the MRS started at today's level?"
+    Indicator columns distribute pillar shocks equally across each pillar's indicators.
+    All computation is browser-side using the same pillar weights as the production model.
   </section>
 
 </main>
 
-<footer class="app-footer">
-  <span id="status-footer"></span>
-</footer>
-
+<footer class="status" id="status-footer">Loading…</footer>
 <script type="module" src="assets/js/page-scenario.js"></script>
 </body>
 </html>

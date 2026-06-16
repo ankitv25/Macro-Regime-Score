@@ -806,3 +806,88 @@ table.pmov-table tbody tr:first-child td { font-weight: 600; }
   .playground-layout { grid-template-columns: 1fr; }
   .playground-result { order: -1; }
 }
+
+/* ─── Scenario v2 ─────────────────────────────────────────────────────────── */
+
+.chart-xl { width: 100%; height: 420px; }
+
+/* Selector */
+.sv2-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.75rem;
+  align-items: flex-start;
+  padding: 0.25rem 0 0.1rem;
+}
+.sv2-group { display: flex; flex-direction: column; gap: 0.3rem; }
+.sv2-group-label {
+  font-size: 0.67rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted);
+}
+.sv2-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.sv2-chip {
+  padding: 0.28rem 0.7rem;
+  border-radius: 20px;
+  border: 1.5px solid var(--chip-color, #64748b);
+  background: #fff;
+  color: var(--chip-color, #64748b);
+  font-size: 0.78rem; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  transition: background 0.1s, color 0.1s;
+}
+.sv2-chip:hover { background: var(--chip-color, #64748b); color: #fff; opacity: 0.82; }
+.sv2-chip.active { background: var(--chip-color, #64748b); color: #fff; font-weight: 700; }
+
+/* Narrative */
+.sv2-placeholder { color: var(--muted); font-size: 0.86rem; padding: 0.25rem 0; }
+.sv2-headline { font-size: 0.93rem; font-weight: 700; color: var(--ink); line-height: 1.4; margin: 0 0 0.4rem; }
+.sv2-body { font-size: 0.83rem; color: var(--ink-2); line-height: 1.55; margin: 0.35rem 0 0.5rem; }
+.sv2-result-row { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; margin: 0.3rem 0; }
+.sv2-comp-z { font-size: 1.65rem; font-weight: 800; font-family: var(--font-mono, monospace); line-height: 1; color: var(--ink); }
+.sv2-comp-unit { font-size: 0.85rem; font-weight: 500; color: var(--muted); margin-left: -0.2rem; }
+.sv2-comp-disp { font-size: 0.95rem; font-family: var(--font-mono, monospace); color: var(--muted); }
+.sv2-peak-label { font-size: 0.75rem; color: var(--muted); }
+.sv2-delta-tag {
+  display: inline-block; font-size: 0.8rem; font-family: var(--font-mono, monospace);
+  font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 4px;
+  background: rgba(0,0,0,0.05); margin-bottom: 0.4rem;
+}
+.sv2-pillar-detail { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.sv2-pillar-line { display: flex; gap: 0.45rem; align-items: flex-start; }
+.sv2-pillar-key { font-size: 0.76rem; font-weight: 700; color: var(--ink); min-width: 84px; flex-shrink: 0; }
+.sv2-pillar-text { font-size: 0.76rem; color: var(--ink-2); line-height: 1.45; }
+
+/* Indicator table */
+.sv2-ind-table { font-size: 0.81rem; width: 100%; }
+.sv2-ind-name { display: flex; align-items: center; gap: 0.4rem; }
+.sv2-pillar-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+
+/* Custom builder */
+.sv2-custom-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.sv2-custom-desc { font-size: 0.82rem; color: var(--ink-2); line-height: 1.5; margin: 0 0 0.75rem; }
+.sv2-cust-row {
+  display: grid; grid-template-columns: 150px 46px 1fr 75px;
+  align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;
+}
+.sv2-cust-label {
+  font-size: 0.81rem; color: var(--ink); font-weight: 500;
+  display: flex; align-items: center; gap: 0.35rem;
+}
+.sv2-cust-val { font-family: var(--font-mono, monospace); font-size: 0.81rem; font-weight: 700; color: var(--ink); text-align: right; }
+.sv2-cust-slider { width: 100%; accent-color: var(--accent); }
+.sv2-cust-hint { font-size: 0.71rem; color: var(--muted); }
+.sv2-timing-block { padding: 0.25rem 0; }
+.sv2-timing-head { font-size: 0.71rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+.sv2-timing-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; }
+.sv2-timing-label { font-size: 0.81rem; color: var(--ink); min-width: 120px; }
+.sv2-decay-options { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.81rem; }
+.sv2-decay-options label { display: flex; align-items: center; gap: 0.35rem; cursor: pointer; color: var(--ink-2); }
+
+/* Methodology note */
+.sv2-method-note { font-size: 0.79rem; color: var(--muted); line-height: 1.55; }
+.sv2-method-note strong { color: var(--ink-2); }
+
+@media (max-width: 1080px) {
+  .sv2-custom-layout { grid-template-columns: 1fr; }
+  .sv2-cust-row { grid-template-columns: 130px 42px 1fr 65px; }
+}

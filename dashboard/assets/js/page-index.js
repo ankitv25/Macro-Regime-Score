@@ -58,6 +58,7 @@ async function main() {
 
   renderPillarTiles(pillarsLong, latest.date, ranked);
   renderWhatChanged(activeFlags, pillarsLong, latest.date);
+  renderDataCalendar(metadata);
   contributionChart("drivers-chart", pillarsWide.slice(-24));
   renderAnalogues(latest.composite);
 
@@ -265,6 +266,68 @@ function seriesFor(pillarsLong, id, n) {
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(-n)
     .map((r) => r.score);
+}
+
+// --- data release calendar ---------------------------------------------------
+
+function renderDataCalendar(metadata) {
+  const dataThrough = new Date(metadata.data_through);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Pending month = month after data_through
+  const pendingYear = dataThrough.getMonth() === 11 ? dataThrough.getFullYear() + 1 : dataThrough.getFullYear();
+  const pendingMonth = (dataThrough.getMonth() + 1) % 12; // 0-indexed
+  const pendingLabel = new Date(pendingYear, pendingMonth, 1).toLocaleString("default", { month: "short", year: "numeric" });
+  // Last day of pending month
+  const pendingEnd = new Date(pendingYear, pendingMonth + 1, 0);
+
+  function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+  function firstFriday(y, m) {
+    const d = new Date(y, m, 1);
+    d.setDate(1 + ((5 - d.getDay() + 7) % 7));
+    return d;
+  }
+  function lastDayOf(y, m) { return new Date(y, m + 1, 0); }
+  function fmt(d) { return d.toLocaleDateString("default", { month: "short", day: "numeric" }); }
+  function daysTo(d) { return Math.ceil((d - today) / 86400000); }
+
+  // Next pending month for the second PCE
+  const nextPM = pendingMonth === 11 ? 0 : pendingMonth + 1;
+  const nextPY = pendingMonth === 11 ? pendingYear + 1 : pendingYear;
+  const nextPEnd = lastDayOf(nextPY, nextPM);
+  const nextPLabel = new Date(nextPY, nextPM, 1).toLocaleString("default", { month: "short", year: "numeric" });
+
+  const releases = [
+    { name: `IPMAN (${pendingLabel})`,       date: addDays(pendingEnd, 17),  binding: false },
+    { name: `Core PCE (${pendingLabel})`,    date: addDays(pendingEnd, 28),  binding: true  },
+    { name: `NFP (${nextPLabel})`,           date: firstFriday(nextPY, nextPM), binding: false },
+    { name: `Core PCE (${nextPLabel})`,      date: addDays(nextPEnd, 28),    binding: true  },
+  ];
+
+  // Countdown to binding constraint (first future binding release)
+  const nextBinding = releases.find((r) => r.binding && daysTo(r.date) > 0);
+  if (nextBinding) {
+    const d = daysTo(nextBinding.date);
+    document.getElementById("update-countdown").textContent =
+      `next MRS update in ${d} day${d === 1 ? "" : "s"} · ${nextBinding.name}`;
+  } else {
+    document.getElementById("update-countdown").textContent = "update available — run update_mrs.py";
+  }
+
+  const rows = releases.map((r) => {
+    const d = daysTo(r.date);
+    const past = d < 0;
+    const soon = !past && d <= 7;
+    const status = past ? "✓ available" : soon ? `${d}d` : fmt(r.date);
+    const cls = past ? "cal-done" : soon ? "cal-soon" : "";
+    return `<div class="cal-row ${cls}">
+      <span class="cal-name">${r.name}${r.binding ? ' <span class="cal-bind">binding</span>' : ""}</span>
+      <span class="cal-date">${status}</span>
+    </div>`;
+  }).join("");
+
+  document.getElementById("data-calendar").innerHTML = rows;
 }
 
 // --- what changed ------------------------------------------------------------

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MRS — Scenario Analysis</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="app">
+
+<header class="appbar">
+  <div class="brand">MRS<span>MONITOR</span></div>
+  <div class="appbar-status" id="appbar-status">Loading…</div>
+  <nav class="appbar-nav">
+    <a href="index.html">Overview</a>
+    <a href="trend.html">Trend &amp; Flags</a>
+    <a href="scenario.html" class="active">Scenarios</a>
+    <a href="about.html">About</a>
+  </nav>
+</header>
+
+<main class="db-grid">
+
+  <!-- Disclaimer -->
+  <section class="card span-12 scen-disclaimer">
+    <strong>These are stress tests, not forecasts.</strong>
+    GFC and COVID scenarios show the exact indicator z-scores recorded during those episodes —
+    applied to the current framework to answer: <em>"what would the MRS read if conditions matched
+    that period today?"</em> The Custom scenario and Playground let you define your own thesis.
+    All computation is live in your browser using the same weights as the production model.
+  </section>
+
+  <!-- 3 Scenario cards -->
+  <section class="card span-4 scen-card" id="card-gfc">
+    <div class="scen-head">
+      <span class="scen-badge scen-badge-red">GFC 2008</span>
+      <span class="scen-period">December 2008 · trough</span>
+    </div>
+    <p class="scen-desc">Credit markets froze, equity markets fell −57%, Fed cut to near-zero.
+    The worst US financial crisis since the Depression — and the only episode where the MRS
+    reached Contraction without ambiguity.</p>
+    <div class="scen-composite" id="gfc-composite"></div>
+    <div class="scen-pillars" id="gfc-pillars"></div>
+    <table class="dtable scen-table" id="gfc-table"></table>
+  </section>
+
+  <section class="card span-4 scen-card" id="card-covid">
+    <div class="scen-head">
+      <span class="scen-badge scen-badge-red">COVID 2020</span>
+      <span class="scen-period">March 2020 · trough</span>
+    </div>
+    <p class="scen-desc">Pandemic lockdowns triggered the sharpest output collapse in history.
+    SPY fell −34% in 23 days. A brief but severe Contraction — primarily a Growth and Stress
+    shock rather than a credit crisis.</p>
+    <div class="scen-composite" id="covid-composite"></div>
+    <div class="scen-pillars" id="covid-pillars"></div>
+    <table class="dtable scen-table" id="covid-table"></table>
+  </section>
+
+  <section class="card span-4 scen-card" id="card-custom">
+    <div class="scen-head">
+      <span class="scen-badge scen-badge-blue">Custom</span>
+      <span class="scen-period">Your scenario · edit below</span>
+    </div>
+    <p class="scen-desc">Start from today's readings. Enter any z-score (−3 to +3) for each
+    indicator. The composite updates live. Use this to test your own macro thesis or a
+    specific risk event.</p>
+    <div class="scen-composite" id="custom-composite"></div>
+    <div class="scen-pillars" id="custom-pillars"></div>
+    <table class="dtable scen-table" id="custom-table"></table>
+  </section>
+
+  <!-- Playground -->
+  <section class="card span-12">
+    <div class="card-head">
+      <h2>Playground — live composite</h2>
+      <span class="card-sub">drag any indicator to see regime impact in real time · starts from today's actual readings</span>
+    </div>
+    <div class="playground-layout">
+      <div class="playground-sliders" id="playground-sliders"></div>
+      <div class="playground-result" id="playground-result"></div>
+    </div>
+    <div style="margin-top:0.5rem">
+      <button class="pg-btn" id="pg-reset">Reset to today</button>
+      <button class="pg-btn pg-btn-secondary" id="pg-load-gfc">Load GFC</button>
+      <button class="pg-btn pg-btn-secondary" id="pg-load-covid">Load COVID</button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="app-footer">
+  <span id="status-footer"></span>
+</footer>
+
+<script type="module" src="assets/js/page-scenario.js"></script>
+</body>
+</html>

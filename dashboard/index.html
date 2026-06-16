@@ -15,6 +15,7 @@
   <nav class="appbar-nav">
     <a href="index.html" class="active">Overview</a>
     <a href="trend.html">Trend &amp; Flags</a>
+    <a href="scenario.html">Scenarios</a>
     <a href="about.html">About</a>
   </nav>
 </header>
@@ -78,16 +79,22 @@
 
   <!-- Row 4: analyst summary (left) + 24-month driver trend (right) -->
 
-  <section class="card span-5">
+  <section class="card span-5" style="align-self:start">
     <div class="card-head">
       <h2>Analyst summary</h2>
       <span class="card-sub" id="summary-date"></span>
     </div>
     <div class="summary-grid" id="summary-grid"></div>
     <div class="analyst-note" id="analyst-note" hidden></div>
+    <div class="card-divider" style="margin-top:0.75rem"></div>
+    <div class="card-head" style="margin-top:0.5rem">
+      <h2>Upcoming data</h2>
+      <span class="card-sub" id="update-countdown"></span>
+    </div>
+    <div id="data-calendar"></div>
   </section>
 
-  <section class="card span-7">
+  <section class="card span-7" style="align-self:start">
     <div class="card-head">
       <h2>What's driving the score · last 24 months</h2>
       <span class="card-sub">stacked pillar contributions (z-units)</span>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MRS Monitor — Indicator</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+</head>
+<body class="app">
+
+<header class="appbar">
+  <div class="brand">MRS<span>MONITOR</span></div>
+  <div class="appbar-status" id="appbar-status">Loading…</div>
+  <nav class="appbar-nav">
+    <a href="index.html">Overview</a>
+    <a href="trend.html">Trend &amp; Flags</a>
+    <a href="about.html">About</a>
+  </nav>
+</header>
+
+<div class="kpi-ribbon" id="kpi-ribbon"></div>
+
+<div class="subnav">
+  <a id="back-link" href="index.html">← Back</a>
+  <span class="crumb" id="crumb">Indicator</span>
+</div>
+
+<main class="db-grid">
+
+  <section class="card span-8">
+    <div class="card-head">
+      <h2 id="indicator-title">Indicator</h2>
+      <span class="card-sub">raw series (left axis) vs. its z-score (right axis), with the expanding mean ± 1 std band</span>
+    </div>
+    <div id="indicator-chart" class="chart-lg"></div>
+    <p class="chart-caption">The shaded band is the expanding-window mean ± 1 standard deviation — the moving definition of "normal" the z-score is measured against. ✕ marks months clipped at |z| = 3.</p>
+  </section>
+
+  <section class="card span-4 verdict-card">
+    <div class="verdict-head" id="ind-verdict-head"></div>
+    <div id="ind-gauge"></div>
+    <div class="verdict-body" id="ind-verdict-body"></div>
+  </section>
+
+  <section class="card span-12">
+    <div class="card-head"><h2>Data lineage</h2></div>
+    <dl class="lineage" id="lineage"></dl>
+  </section>
+
+</main>
+
+<footer class="status" id="status-footer">Loading…</footer>
+<script type="module" src="assets/js/page-indicator.js"></script>
+</body>
+</html>

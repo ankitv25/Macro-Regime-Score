@@ -1,0 +1,5 @@
+level,name,flag,magnitude
+pillar,inflation,deterioration warning,-0.708
+indicator,i_pce_dev,deterioration warning,-0.683
+indicator,i_pce_mom,deterioration warning,-0.732
+indicator,s_bond,deterioration warning,-0.631

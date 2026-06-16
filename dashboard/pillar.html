@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MRS Monitor — Pillar</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+</head>
+<body class="app">
+
+<header class="appbar">
+  <div class="brand">MRS<span>MONITOR</span></div>
+  <div class="appbar-status" id="appbar-status">Loading…</div>
+  <nav class="appbar-nav">
+    <a href="index.html">Overview</a>
+    <a href="trend.html">Trend &amp; Flags</a>
+    <a href="about.html">About</a>
+  </nav>
+</header>
+
+<div class="kpi-ribbon" id="kpi-ribbon"></div>
+
+<div class="subnav">
+  <a href="index.html">← Overview</a>
+  <span class="crumb" id="crumb">Pillar</span>
+</div>
+
+<main class="db-grid">
+
+  <section class="card span-8">
+    <div class="card-head">
+      <h2 id="pillar-title">Pillar</h2>
+      <span class="card-sub">pillar z-score with regime thresholds (+0.35 / −0.30 / −1.00)</span>
+    </div>
+    <div id="pillar-chart" class="chart-lg"></div>
+    <p class="chart-caption">Shaded by the confirmed composite regime. Dotted lines are the same thresholds used for the headline score, applied here at the pillar level.</p>
+  </section>
+
+  <section class="card span-4 verdict-card">
+    <div class="verdict-head" id="pillar-verdict-head"></div>
+    <div id="pillar-gauge"></div>
+    <div class="verdict-body" id="pillar-verdict-body"></div>
+  </section>
+
+  <section class="card span-12">
+    <div class="card-head">
+      <h2>Member indicators</h2>
+      <span class="card-sub">each indicator's current standing, recent move, and position in its own history</span>
+    </div>
+    <div class="pillar-tiles" id="indicator-tiles"></div>
+  </section>
+
+  <section class="card span-7">
+    <div class="card-head">
+      <h2>Regime-conditional distribution</h2>
+      <span class="card-sub">how this pillar has behaved inside each confirmed composite regime</span>
+    </div>
+    <div id="pillar-box" class="chart-md"></div>
+    <p class="chart-caption">Does the pillar sit where it usually does for the current regime? A reading far from its regime's historical box is a divergence worth noting.</p>
+  </section>
+
+  <section class="card span-5 explainer">
+    <div class="card-head"><h2>Role in the composite</h2></div>
+    <p id="pillar-role"></p>
+    <p class="chart-caption">Indicators are equally weighted within the pillar; the pillar's z-score is their average, then weighted into the composite at the share shown above.</p>
+  </section>
+
+</main>
+
+<footer class="status" id="status-footer">Loading…</footer>
+<script type="module" src="assets/js/page-pillar.js"></script>
+</body>
+</html>

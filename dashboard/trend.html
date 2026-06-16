@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MRS Monitor — Trend &amp; Flags</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+</head>
+<body class="app">
+
+<header class="appbar">
+  <div class="brand">MRS<span>MONITOR</span></div>
+  <div class="appbar-status" id="appbar-status">Loading…</div>
+  <nav class="appbar-nav">
+    <a href="index.html">Overview</a>
+    <a href="trend.html" class="active">Trend &amp; Flags</a>
+    <a href="about.html">About</a>
+  </nav>
+</header>
+
+<div class="kpi-ribbon" id="kpi-ribbon"></div>
+
+<main class="db-grid">
+
+  <section class="card span-12">
+    <div class="card-head">
+      <h2>Active flags</h2>
+      <span class="card-sub">deterioration / improvement warnings — <code>direction_flag</code> persisting ≥3 months with a 6-month z-change beyond ±0.25 (methodology §7.4)</span>
+    </div>
+    <div class="flag-cards" id="flag-cards"></div>
+  </section>
+
+  <section class="card span-12">
+    <div class="card-head">
+      <h2>Indicator heatmap · trailing 24 months</h2>
+      <span class="card-sub">z-scores; green = supportive, red = adverse</span>
+    </div>
+    <div id="heatmap"></div>
+  </section>
+
+  <section class="card span-6">
+    <div class="card-head">
+      <h2>Biggest movers</h2>
+      <span class="card-sub">largest 3-month z-score changes this month</span>
+    </div>
+    <table class="dtable" id="movers-table"></table>
+  </section>
+
+  <section class="card span-6">
+    <div class="card-head">
+      <h2>Regime transitions</h2>
+      <span class="card-sub">confirmed regime history, most recent first</span>
+    </div>
+    <table class="dtable" id="transitions-table"></table>
+  </section>
+
+</main>
+
+<footer class="status" id="status-footer">Loading…</footer>
+<script type="module" src="assets/js/page-trend.js"></script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MRS Monitor — Macro Regime Score</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+</head>
+<body class="app">
+
+<header class="appbar">
+  <div class="brand">MRS<span>MONITOR</span></div>
+  <div class="appbar-status" id="appbar-status">Loading…</div>
+  <nav class="appbar-nav">
+    <a href="index.html" class="active">Overview</a>
+    <a href="trend.html">Trend &amp; Flags</a>
+    <a href="about.html">About</a>
+  </nav>
+</header>
+
+<!-- KPI ribbon — Layer 0: the one-glance answer -->
+<div class="kpi-ribbon" id="kpi-ribbon"></div>
+
+<main class="db-grid">
+
+  <!-- Row 1: score (left) + regime interpretation (right) -->
+
+  <section class="card span-8 composite-anchor">
+    <div class="card-head">
+      <h2>Composite MRS · 2003–today</h2>
+      <span class="card-sub">z-score composite, mapped to the 1–5 display scale</span>
+    </div>
+    <div class="composite-readout" id="composite-readout"></div>
+    <div id="composite-chart" class="chart-lg"></div>
+    <div class="composite-foot" id="composite-foot"></div>
+    <p class="chart-caption">
+      Horizontal bands &amp; dotted lines = regime thresholds (3.35 / 2.70 / 2.00).
+      Time shading = the <em>confirmed</em> regime; the dark strip on the floor marks
+      <strong>NBER recessions</strong> (validation only — the score isn't told about them).
+    </p>
+  </section>
+
+  <section class="card span-4 verdict-card">
+    <div class="card-head"><h2>Regime status</h2></div>
+    <div class="verdict-head" id="verdict-head"></div>
+    <div id="hero-gauge"></div>
+    <div class="verdict-body" id="verdict-body"></div>
+    <div id="regime-legend"></div>
+  </section>
+
+  <!-- Row 2: pillar evidence — the "why" behind the composite score -->
+
+  <section class="card span-12">
+    <div class="card-head">
+      <h2>Pillar evidence</h2>
+      <span class="card-sub" id="pillar-evidence-sub">where each pillar sits in its history · how it moved · what it contributes to the score</span>
+    </div>
+    <div class="pillar-tiles" id="pillar-tiles"></div>
+  </section>
+
+  <!-- Row 3: composite attribution (how pillars sum to the score) + analyst summary -->
+
+  <section class="card span-7">
+    <div class="card-head">
+      <h2>Pillar movement &amp; attribution · this month</h2>
+      <span class="card-sub">contribution + 3M/6M/12M momentum · ranked by contribution</span>
+    </div>
+    <div id="attribution-chart"></div>
+    <p class="chart-caption" id="attribution-caption"></p>
+  </section>
+
+  <section class="card span-5">
+    <div class="card-head">
+      <h2>Analyst summary</h2>
+      <span class="card-sub" id="summary-date"></span>
+    </div>
+    <div class="summary-grid" id="summary-grid"></div>
+    <div class="analyst-note" id="analyst-note" hidden></div>
+  </section>
+
+  <!-- Row 4: what changed this month + 24-month driver trend -->
+
+  <section class="card span-5">
+    <div class="card-head"><h2>What changed this month</h2></div>
+    <p class="lead" id="direction-summary"></p>
+    <ul class="changes" id="changes-list"></ul>
+  </section>
+
+  <section class="card span-7">
+    <div class="card-head">
+      <h2>What's driving the score · last 24 months</h2>
+      <span class="card-sub">stacked pillar contributions (z-units)</span>
+    </div>
+    <div id="drivers-chart" class="chart-md"></div>
+  </section>
+
+  <!-- Row 5: historical analogues + what is MRS -->
+
+  <section class="card span-7">
+    <div class="card-head">
+      <h2>What does history say?</h2>
+      <span class="card-sub">past episodes closest to today's composite level</span>
+    </div>
+    <div class="analogues" id="analogues"></div>
+  </section>
+
+  <section class="card span-5 explainer">
+    <div class="card-head"><h2>What is the MRS?</h2></div>
+    <p>
+      A single monthly read on the US macro-financial environment from
+      <strong>13 indicators</strong> across five pillars — Growth (30%), Credit (20%),
+      Market Stress (20%), Inflation (15%), Liquidity/Rates (15%). Each is scored in
+      standard-deviation (z) units vs. its own history; the weighted average is the
+      composite. <strong>0 = neutral, higher = better.</strong>
+    </p>
+    <p class="chart-caption">
+      Regimes change only after a reading persists two consecutive months, so the
+      label is deliberately slow to flip. See <a href="about.html">About</a> for the full method.
+    </p>
+  </section>
+
+</main>
+
+<footer class="status" id="status-footer">Loading…</footer>
+
+<script type="module" src="assets/js/page-index.js"></script>
+</body>
+</html>

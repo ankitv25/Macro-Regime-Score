@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MRS Monitor — About</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="app">
+
+<header class="appbar">
+  <div class="brand">MRS<span>MONITOR</span></div>
+  <div class="appbar-status" id="appbar-status">Loading…</div>
+  <nav class="appbar-nav">
+    <a href="index.html">Overview</a>
+    <a href="trend.html">Trend &amp; Flags</a>
+    <a href="about.html" class="active">About</a>
+  </nav>
+</header>
+
+<main class="db-grid">
+
+  <section class="card span-7 explainer">
+    <div class="card-head"><h2>About the Macro Regime Score</h2></div>
+    <p>
+      The MRS is a monthly composite indicator of the U.S. macro-financial regime,
+      built from <strong>13 indicators across five pillars</strong> — Growth (30%),
+      Credit (20%), Market Stress (20%), Inflation (15%) and Liquidity/Rates (15%).
+      Each indicator is converted to an expanding-window z-score (minimum 24-month
+      window, clipped to ±3); the composite is the weighted sum of pillar scores,
+      shown on a 1–5 display scale (<code>3 + composite&nbsp;z</code>, clipped to [1, 5]).
+    </p>
+    <p>
+      Regimes — Expansion, Neutral, Slowdown, Contraction — are assigned from fixed
+      composite-z thresholds (+0.35 / −0.30 / −1.00) with a two-month confirmation
+      rule before a regime change is considered confirmed.
+    </p>
+    <p class="chart-caption">
+      This dashboard reads exclusively from <code>Research/MRS/MRS_Master.xlsx</code>,
+      produced by <code>Src/mrs_monitoring_store.py</code> from the canonical monitoring
+      tables (methodology Part VII) and exported to JSON by
+      <code>Src/export_dashboard_data.py</code>. No values are computed in the browser —
+      the only authored content is the monthly analyst note.
+    </p>
+  </section>
+
+  <section class="card span-5">
+    <div class="card-head"><h2>Reference documents</h2></div>
+    <p class="chart-caption">Markdown/PowerPoint files in the repository. GitHub serves rendered views; <code>.md</code> over plain file hosting may show as source.</p>
+    <ul class="reflist">
+      <li><a href="../MRS_Methodology_and_Monitoring_Framework.md">Methodology &amp; Monitoring Framework</a> — full specification (v2.1)</li>
+      <li><a href="../MRS_Research_Paper.md">Research Paper</a></li>
+      <li><a href="../MRS_Overview_Deck.pptx">Overview Deck</a> (PowerPoint)</li>
+      <li><a href="../mrs_validation_log.md">Data Validation Log</a></li>
+      <li><a href="../MRS_Dashboard_Implementation_Plan.md">Dashboard Implementation Plan</a></li>
+    </ul>
+  </section>
+
+  <section class="card span-12">
+    <div class="card-head"><h2>Update cadence</h2></div>
+    <p id="cadence-text">Loading…</p>
+  </section>
+
+</main>
+
+<footer class="status" id="status-footer">Loading…</footer>
+<script type="module" src="assets/js/page-about.js"></script>
+</body>
+</html>

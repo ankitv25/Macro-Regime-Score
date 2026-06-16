@@ -458,6 +458,7 @@ body.app .regime-badge { font-size: 0.85rem; padding: 0.3rem 0.85rem; }
 .chart-lg { width: 100%; height: 340px; }
 .chart-md { width: 100%; height: 240px; }
 .chart-caption { font-size: 0.74rem; color: var(--muted); line-height: 1.45; margin: 0.5rem 0 0; }
+.card-divider { border: none; border-top: 1px solid var(--line); margin: 0.9rem 0 0; }
 .chart-caption a, .explainer a { color: var(--accent); }
 
 /* Verdict card */

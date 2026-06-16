@@ -59,15 +59,21 @@
     <div class="pillar-tiles" id="pillar-tiles"></div>
   </section>
 
-  <!-- Row 3: composite attribution (how pillars sum to the score) + analyst summary -->
+  <!-- Row 3: attribution + what changed (left) + analyst summary (right) -->
 
-  <section class="card span-7" style="align-self: start">
+  <section class="card span-7">
     <div class="card-head">
       <h2>Pillar movement &amp; attribution · this month</h2>
       <span class="card-sub">contribution + 3M/6M/12M momentum · ranked by contribution</span>
     </div>
     <div id="attribution-chart"></div>
     <p class="chart-caption" id="attribution-caption"></p>
+    <div class="card-divider"></div>
+    <div class="card-head" style="margin-top:0.4rem">
+      <h2>What changed this month</h2>
+    </div>
+    <p class="lead" id="direction-summary"></p>
+    <ul class="changes" id="changes-list"></ul>
   </section>
 
   <section class="card span-5">
@@ -79,15 +85,9 @@
     <div class="analyst-note" id="analyst-note" hidden></div>
   </section>
 
-  <!-- Row 4: what changed this month + 24-month driver trend -->
+  <!-- Row 4: 24-month driver trend (full width) -->
 
-  <section class="card span-5">
-    <div class="card-head"><h2>What changed this month</h2></div>
-    <p class="lead" id="direction-summary"></p>
-    <ul class="changes" id="changes-list"></ul>
-  </section>
-
-  <section class="card span-7">
+  <section class="card span-12">
     <div class="card-head">
       <h2>What's driving the score · last 24 months</h2>
       <span class="card-sub">stacked pillar contributions (z-units)</span>

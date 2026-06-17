@@ -369,7 +369,7 @@ const SCENARIO_DEFS = {
 
 // ─── Mutable state ────────────────────────────────────────────────────────────
 
-let activeScenarioId = "soft_landing";
+let activeScenarioId = null;  // null = show 3 core lines only; non-null = add 4th stress overlay
 
 // Custom builder uses pillar-level shocks for UX simplicity;
 // internally these are distributed to each indicator in the pillar.
@@ -384,6 +384,9 @@ let _todayComposite       = null;
 let _dataThrough          = null;
 let _historicalComposites = null;
 let _baselinePath         = null;
+let _optimisticPath       = null;
+let _pessimisticPath      = null;
+let _forecastInputs       = null;   // forecast_inputs.json
 let _indicatorsData       = null;   // full indicators_wide.json
 
 // ─── Core MRS scoring ─────────────────────────────────────────────────────────
@@ -467,6 +470,42 @@ function buildBaselinePath(currentZ, dataThrough, months = 12) {
     const z = {};
     for (const code of IND_CODES) {
       z[code] = currentZ[code] != null ? currentZ[code] * factor : null;
+    }
+    const scored = scoreIndicators(z);
+    path.push({ t, date: addMonths(dataThrough, t), z, ...scored });
+  }
+  return path;
+}
+
+// Baseline from real forecast: uses baseline_z arrays from forecast_inputs.json.
+// Falls back to exponential mean-reversion for any missing indicator.
+function buildBaselineFromForecast(forecastInputs, currentZ, dataThrough, months = 12) {
+  const path = [];
+  for (let t = 1; t <= months; t++) {
+    const z = {};
+    for (const code of IND_CODES) {
+      const fi = forecastInputs[code];
+      const fv = fi?.baseline_z?.[t - 1];
+      z[code] = (fv != null && !isNaN(fv)) ? fv
+              : (currentZ[code] != null ? currentZ[code] * Math.pow(1 - REVERSION, t) : null);
+    }
+    const scored = scoreIndicators(z);
+    path.push({ t, date: addMonths(dataThrough, t), z, ...scored });
+  }
+  return path;
+}
+
+// Core forecast band (optimistic or pessimistic): uses per-indicator arrays from forecast_inputs.json.
+// pathKey is "optimistic_z" or "pessimistic_z". Falls back to mean-reversion.
+function buildCorePath(forecastInputs, pathKey, currentZ, dataThrough, months = 12) {
+  const path = [];
+  for (let t = 1; t <= months; t++) {
+    const z = {};
+    for (const code of IND_CODES) {
+      const fi = forecastInputs[code];
+      const fv = fi?.[pathKey]?.[t - 1];
+      z[code] = (fv != null && !isNaN(fv)) ? fv
+              : (currentZ[code] != null ? currentZ[code] * Math.pow(1 - REVERSION, t) : null);
     }
     const scored = scoreIndicators(z);
     path.push({ t, date: addMonths(dataThrough, t), z, ...scored });
@@ -600,9 +639,15 @@ function renderSelector() {
 
   document.querySelectorAll(".sv2-chip").forEach(btn => {
     btn.addEventListener("click", () => {
-      activeScenarioId = btn.dataset.scen;
-      document.querySelectorAll(".sv2-chip").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
+      if (activeScenarioId === btn.dataset.scen) {
+        // Toggle off — return to 3-line-only view
+        activeScenarioId = null;
+        document.querySelectorAll(".sv2-chip").forEach(b => b.classList.remove("active"));
+      } else {
+        activeScenarioId = btn.dataset.scen;
+        document.querySelectorAll(".sv2-chip").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
       updateAll();
     });
   });
@@ -610,12 +655,24 @@ function renderSelector() {
 
 // ─── Forecast chart ───────────────────────────────────────────────────────────
 
-function renderForecastChart(scenPath) {
-  const isCustom = activeScenarioId === "custom";
-  const isHist   = !!HIST_WINDOWS[activeScenarioId];
-  const def      = isCustom ? { label: "Custom", color: "#546e7a" }
-                 : isHist   ? HIST_WINDOWS[activeScenarioId]
-                 : SCENARIO_DEFS[activeScenarioId];
+function renderForecastChart(stressPath) {
+  // The 3 permanent core lines come from real forecast data (forecast_inputs.json).
+  const corePaths = [
+    { label: "Baseline forecast", color: "#2e7d32", path: _baselinePath,   style: "solid", width: 2.5 },
+    { label: "Optimistic",        color: "#66bb6a", path: _optimisticPath,  style: "dash",  width: 2.0 },
+    { label: "Pessimistic",       color: "#ef5350", path: _pessimisticPath, style: "dash",  width: 2.0 },
+  ];
+
+  // Optional 4th overlay: the selected stress/historical/custom scenario.
+  const scenarioPaths = [...corePaths];
+  if (stressPath && activeScenarioId) {
+    const isCustom = activeScenarioId === "custom";
+    const isHist   = !!HIST_WINDOWS[activeScenarioId];
+    const def      = isCustom ? { label: "Custom", color: "#546e7a" }
+                   : isHist   ? HIST_WINDOWS[activeScenarioId]
+                   : SCENARIO_DEFS[activeScenarioId];
+    scenarioPaths.push({ label: def.label, color: def.color, path: stressPath, style: "dot", width: 2.0, markers: false });
+  }
 
   scenarioForecastChart(
     "sv2-forecast-chart",
@@ -625,8 +682,8 @@ function renderForecastChart(scenPath) {
       display_score: clamp(_todayComposite + 3, 1, 5),
       regime:        classifyRegime(_todayComposite),
     },
-    _baselinePath,
-    [{ label: def.label, color: def.color, path: scenPath }],
+    null,           // no legacy dotted baseline; baseline is the first entry in scenarioPaths
+    scenarioPaths,
   );
 }
 
@@ -879,13 +936,25 @@ function renderCustomBuilder() {
 // ─── Master update ────────────────────────────────────────────────────────────
 
 function updateAll() {
-  const scenPath = getScenarioPath(activeScenarioId);
-  if (!scenPath || scenPath.length === 0) return;
+  // Stress path is optional — null when no scenario is selected (3-line-only view).
+  const stressPath = activeScenarioId ? getScenarioPath(activeScenarioId) : null;
 
-  renderForecastChart(scenPath);
-  renderNarrative(scenPath);
-  renderPillarChart(scenPath);
-  renderIndicatorTable(scenPath);
+  renderForecastChart(stressPath);
+
+  if (stressPath && stressPath.length > 0) {
+    renderNarrative(stressPath);
+    renderPillarChart(stressPath);
+    renderIndicatorTable(stressPath);
+  } else {
+    // Reset panels to placeholder state
+    document.getElementById("sv2-active-label").textContent = "Select a scenario above";
+    document.getElementById("sv2-narrative").innerHTML =
+      `<p class="sv2-placeholder">Select a scenario chip above to overlay a stress path and see the macro thesis, pillar-level impact, and risk-asset implications.</p>`;
+    document.getElementById("sv2-ind-tbody").innerHTML =
+      `<tr><td colspan="5" class="sv2-placeholder" style="padding:1rem 0.55rem">Select a scenario to populate this table.</td></tr>`;
+    const captEl = document.getElementById("sv2-table-caption");
+    if (captEl) captEl.textContent = "";
+  }
 
   document.getElementById("sv2-custom-section").style.display =
     activeScenarioId === "custom" ? "" : "none";
@@ -894,13 +963,15 @@ function updateAll() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const [indicatorsWide, compositeHistory, metadata] = await Promise.all([
+  const [indicatorsWide, compositeHistory, metadata, forecastInputs] = await Promise.all([
     loadJSON("indicators_wide.json"),
     loadJSON("composite_history.json"),
     loadJSON("metadata.json"),
+    loadJSON("forecast_inputs.json"),
   ]);
 
   _indicatorsData = indicatorsWide;
+  _forecastInputs = forecastInputs;
   _dataThrough    = metadata.data_through;
 
   // Find the last complete row (prefer data_through; fall back to last row with NFP)
@@ -918,8 +989,12 @@ async function main() {
   const todayPillars = computePillarScores(_currentZ);
   _todayComposite    = computeCompositeFromPillars(todayPillars);
 
-  // Build baseline path (indicator-level mean-reversion)
-  _baselinePath = buildBaselinePath(_currentZ, _dataThrough, 12);
+  // Build the 3 core forecast paths from forecast_inputs.json indicator-level arrays.
+  // forecast_inputs.json nests indicator data under .indicators
+  const fcInd = forecastInputs.indicators || forecastInputs;
+  _baselinePath    = buildBaselineFromForecast(fcInd, _currentZ, _dataThrough, 12);
+  _optimisticPath  = buildCorePath(fcInd, "optimistic_z",  _currentZ, _dataThrough, 12);
+  _pessimisticPath = buildCorePath(fcInd, "pessimistic_z", _currentZ, _dataThrough, 12);
 
   // Last 5 years of composite history for the main chart
   const cutoff = addMonths(_dataThrough, -60);

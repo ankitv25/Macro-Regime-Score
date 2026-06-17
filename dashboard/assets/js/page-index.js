@@ -23,7 +23,7 @@ import {
 } from "./narrative.js";
 
 async function main() {
-  const [composite, pillarsWide, pillarsLong, regimePeriods, activeFlags, metadata, commentary] = await Promise.all([
+  const [composite, pillarsWide, pillarsLong, regimePeriods, activeFlags, metadata, commentary, forecastInputs] = await Promise.all([
     loadJSON("composite_history.json"),
     loadJSON("pillars_wide.json"),
     loadJSON("pillars_long.json"),
@@ -31,6 +31,7 @@ async function main() {
     loadJSON("active_flags.json"),
     loadJSON("metadata.json"),
     loadJSON("commentary.json").catch(() => ({})),
+    loadJSON("forecast_inputs.json").catch(() => null),
   ]);
 
   const latest = composite[composite.length - 1];
@@ -59,6 +60,7 @@ async function main() {
   renderPillarTiles(pillarsLong, latest.date, ranked);
   renderWhatChanged(activeFlags, pillarsLong, latest.date);
   renderDataCalendar(metadata);
+  renderForecastInputs(forecastInputs);
   contributionChart("drivers-chart", pillarsWide.slice(-24));
   renderAnalogues(latest.composite);
 
@@ -268,19 +270,21 @@ function seriesFor(pillarsLong, id, n) {
     .map((r) => r.score);
 }
 
-// --- data release calendar ---------------------------------------------------
+// --- data release countdown (simplified — calendar moved to forecast-inputs-table) ---
 
 function renderDataCalendar(metadata) {
   const dataThrough = new Date(metadata.data_through);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Pending month = month after data_through
-  const pendingYear = dataThrough.getMonth() === 11 ? dataThrough.getFullYear() + 1 : dataThrough.getFullYear();
-  const pendingMonth = (dataThrough.getMonth() + 1) % 12; // 0-indexed
-  const pendingLabel = new Date(pendingYear, pendingMonth, 1).toLocaleString("default", { month: "short", year: "numeric" });
-  // Last day of pending month
-  const pendingEnd = new Date(pendingYear, pendingMonth + 1, 0);
+  const pendingYear  = dataThrough.getMonth() === 11 ? dataThrough.getFullYear() + 1 : dataThrough.getFullYear();
+  const pendingMonth = (dataThrough.getMonth() + 1) % 12;
+  const pendingEnd   = new Date(pendingYear, pendingMonth + 1, 0);
+
+  const nextPM  = pendingMonth === 11 ? 0 : pendingMonth + 1;
+  const nextPY  = pendingMonth === 11 ? pendingYear + 1 : pendingYear;
+  const nextPEnd = new Date(nextPY, nextPM + 1, 0);
+  const nextPLabel = new Date(nextPY, nextPM, 1).toLocaleString("default", { month: "short", year: "numeric" });
 
   function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
   function firstFriday(y, m) {
@@ -288,46 +292,94 @@ function renderDataCalendar(metadata) {
     d.setDate(1 + ((5 - d.getDay() + 7) % 7));
     return d;
   }
-  function lastDayOf(y, m) { return new Date(y, m + 1, 0); }
-  function fmt(d) { return d.toLocaleDateString("default", { month: "short", day: "numeric" }); }
   function daysTo(d) { return Math.ceil((d - today) / 86400000); }
 
-  // Next pending month for the second PCE
-  const nextPM = pendingMonth === 11 ? 0 : pendingMonth + 1;
-  const nextPY = pendingMonth === 11 ? pendingYear + 1 : pendingYear;
-  const nextPEnd = lastDayOf(nextPY, nextPM);
-  const nextPLabel = new Date(nextPY, nextPM, 1).toLocaleString("default", { month: "short", year: "numeric" });
-
-  const releases = [
-    { name: `IPMAN (${pendingLabel})`,       date: addDays(pendingEnd, 17),  binding: false },
-    { name: `Core PCE (${pendingLabel})`,    date: addDays(pendingEnd, 28),  binding: true  },
-    { name: `NFP (${nextPLabel})`,           date: firstFriday(nextPY, nextPM), binding: false },
-    { name: `Core PCE (${nextPLabel})`,      date: addDays(nextPEnd, 28),    binding: true  },
+  const bindingReleases = [
+    { name: `Core PCE (${new Date(pendingYear, pendingMonth, 1).toLocaleString("default", { month: "short", year: "numeric" })})`, date: addDays(pendingEnd, 28) },
+    { name: `Core PCE (${nextPLabel})`, date: addDays(nextPEnd, 28) },
+    { name: `NFP (${nextPLabel})`,      date: firstFriday(nextPY, nextPM) },
   ];
 
-  // Countdown to binding constraint (first future binding release)
-  const nextBinding = releases.find((r) => r.binding && daysTo(r.date) > 0);
+  const nextBinding = bindingReleases.find((r) => daysTo(r.date) > 0);
+  const el = document.getElementById("update-countdown");
+  if (!el) return;
   if (nextBinding) {
     const d = daysTo(nextBinding.date);
-    document.getElementById("update-countdown").textContent =
-      `next MRS update in ${d} day${d === 1 ? "" : "s"} · ${nextBinding.name}`;
+    el.textContent = `next MRS update in ${d} day${d === 1 ? "" : "s"} · ${nextBinding.name}`;
   } else {
-    document.getElementById("update-countdown").textContent = "update available — run update_mrs.py";
+    el.textContent = "update available — run update_mrs.py";
+  }
+}
+
+// --- forecast inputs table ---------------------------------------------------
+
+function renderForecastInputs(forecastData) {
+  const el = document.getElementById("forecast-inputs-table");
+  if (!el || !forecastData) return;
+
+  const indicators = forecastData.indicators || forecastData;
+  const asOf = forecastData.as_of || "";
+
+  const PILLAR_ORDER = ["growth", "credit", "stress", "inflation", "liquidity"];
+  const STATUS_LABELS = {
+    consensus_forecast: "Consensus",
+    simulated:          "Simulated",
+    market_implied:     "Market-implied",
+  };
+
+  const fmtDate = (s) => s ? s.slice(0, 7) : "—";
+  const fmtNext = (s) => {
+    if (!s) return "—";
+    const d = new Date(s);
+    return d.toLocaleDateString("default", { month: "short", day: "numeric" });
+  };
+
+  let rows = "";
+  for (const pid of PILLAR_ORDER) {
+    const pillarInds = Object.entries(indicators).filter(([, v]) => v.pillar === pid);
+    if (!pillarInds.length) continue;
+    const meta = PILLARS[pid];
+    rows += `<tr class="fi-pillar-row"><td colspan="8" style="background:color-mix(in srgb,${meta.color} 12%,#fff);color:${meta.color};font-weight:600;font-size:0.78rem;padding:0.35rem 0.6rem;letter-spacing:0.04em">${meta.label.toUpperCase()}</td></tr>`;
+
+    for (const [code, ind] of pillarInds) {
+      const statusLabel = STATUS_LABELS[ind.status] || ind.status || "—";
+      const statusClass = ind.status === "consensus_forecast" ? "fi-status-consensus"
+                        : ind.status === "simulated"          ? "fi-status-sim"
+                        : "fi-status-market";
+      const baselineBadge = ind.in_baseline
+        ? `<span class="fi-badge fi-badge-yes">MRS</span>`
+        : `<span class="fi-badge fi-badge-no">—</span>`;
+
+      rows += `<tr>
+        <td class="fi-ind-name">${ind.label}</td>
+        <td class="num fi-actual">${fmtDate(ind.latest_actual_date)}</td>
+        <td class="num fi-actual-val">${ind.latest_actual_raw || "—"}</td>
+        <td class="fi-next-rel">${fmtNext(ind.next_release)}</td>
+        <td class="fi-forecast">${ind.forecast_raw || "—"}</td>
+        <td><span class="fi-status ${statusClass}">${statusLabel}</span></td>
+        <td class="fi-baseline-col">${baselineBadge}</td>
+        <td class="fi-notes">${ind.notes || ""}</td>
+      </tr>`;
+    }
   }
 
-  const rows = releases.map((r) => {
-    const d = daysTo(r.date);
-    const past = d < 0;
-    const soon = !past && d <= 7;
-    const status = past ? "✓ available" : soon ? `${d}d` : fmt(r.date);
-    const cls = past ? "cal-done" : soon ? "cal-soon" : "";
-    return `<div class="cal-row ${cls}">
-      <span class="cal-name">${r.name}${r.binding ? ' <span class="cal-bind">binding</span>' : ""}</span>
-      <span class="cal-date">${status}</span>
+  el.innerHTML = `
+    ${asOf ? `<p class="fi-as-of">Forecasts as of ${asOf} · all 12-month paths rescored through the MRS indicator → pillar → composite engine on the Scenarios tab</p>` : ""}
+    <div class="fi-table-wrap">
+      <table class="dtable fi-table">
+        <thead><tr>
+          <th>Indicator</th>
+          <th class="num">Latest</th>
+          <th class="num">Value</th>
+          <th>Next release</th>
+          <th>12m forecast</th>
+          <th>Source / Method</th>
+          <th>In MRS</th>
+          <th>Notes</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>`;
-  }).join("");
-
-  document.getElementById("data-calendar").innerHTML = rows;
 }
 
 // --- what changed ------------------------------------------------------------

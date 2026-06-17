@@ -35,12 +35,13 @@
   <section class="card span-12">
     <div class="card-head">
       <h2>MRS path · 5-year history + 12-month scenario forecast</h2>
-      <span class="card-sub">shaded zone = 12-month forecast horizon · dotted = baseline (no shock) · solid = scenario path</span>
+      <span class="card-sub">shaded zone = 12-month forecast horizon · Baseline · Optimistic · Pessimistic from indicator-level forecasts · select a chip above to overlay a stress scenario</span>
     </div>
     <div id="sv2-forecast-chart" class="chart-xl"></div>
     <p class="chart-caption">
-      <strong>Baseline</strong> assumes each pillar mean-reverts 8%/month toward neutral — no shock continuation.
-      <strong>Scenario path</strong> applies structured pillar shocks that build linearly to peak, then persist or fade per scenario design.
+      <strong>Baseline</strong> (green solid) uses real indicator-level consensus forecasts from <code>forecast_inputs.json</code> — not mean-reversion.
+      <strong>Optimistic / Pessimistic</strong> bands (dashed) use the upside/downside z-score paths for all 13 indicators, rescored through the full MRS engine.
+      <strong>Stress overlay</strong> (dotted, appears when a scenario chip is selected) applies macro or historical indicator-level shocks on top of today's readings.
       Display scale 1–5 = composite z + 3. Thresholds: 3.35 Expansion · 2.70 Neutral · 2.00 Slowdown.
     </p>
   </section>
@@ -57,7 +58,7 @@
     <div class="card-divider" style="margin-top:0.75rem"></div>
     <div class="card-head" style="margin-top:0.5rem">
       <h2>Pillar impact vs baseline</h2>
-      <span class="card-sub">gray = today's pillar scores · blue = baseline T+6 (8%/mo mean-reversion) · colored = scenario at peak — all computed from indicator z-scores via the MRS engine</span>
+      <span class="card-sub">gray = today's pillar scores · blue = baseline forecast T+6 · colored = stress scenario at peak — all computed from indicator z-scores via the MRS engine</span>
     </div>
     <div id="sv2-pillar-chart"></div>
   </section>
@@ -109,8 +110,8 @@
     <em>indicator z-score → pillar score (equal-weight mean within pillar) → composite (weighted average by pillar weight) → display score (composite + 3, clamped 1–5)</em>.
     No final score is directly manipulated.
     <br><br>
-    <strong>Baseline:</strong> each indicator z-score decays exponentially at 8%/month toward zero (mean-reversion to neutral).
-    <strong>Macro scenarios:</strong> each named scenario defines indicator-level z-score shocks that build linearly from 0 to peak magnitude over the specified months, then persist, slow-fade (→50%), or fast-fade (→0) per scenario design.
+    <strong>Baseline / Optimistic / Pessimistic:</strong> built from real indicator-level forecast paths in <code>forecast_inputs.json</code> — consensus forecasts, market-implied paths, or calibrated estimates for all 13 indicators — rescored through the full MRS engine. These three lines are always visible.
+    <strong>Macro scenarios</strong> (stress overlay, dotted): each named scenario defines indicator-level z-score shocks that build linearly from 0 to peak magnitude over the specified months, then persist, slow-fade (→50%), or fast-fade (→0) per scenario design. Click a chip to add the overlay; click again to remove it.
     <strong>Historical delta-replay:</strong> applies the actual month-by-month indicator z-score changes from each historical episode to today's readings (today_z + hist_delta[t]). After the episode window closes, the path mean-reverts to zero.
     <strong>Custom builder:</strong> pillar-level shocks are distributed equally across all indicators within each pillar, then scored normally.
     <br><br>

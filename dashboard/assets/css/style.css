@@ -900,3 +900,80 @@ table.pmov-table tbody tr:first-child td { font-weight: 600; }
   .sv2-custom-layout { grid-template-columns: 1fr; }
   .sv2-cust-row { grid-template-columns: 130px 42px 1fr 65px; }
 }
+
+/* ─── Forecast inputs table ──────────────────────────────────────────────── */
+
+.fi-as-of {
+  font-size: 0.76rem;
+  color: var(--muted);
+  margin: 0 0 0.65rem;
+  line-height: 1.45;
+}
+
+.fi-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fi-table {
+  font-size: 0.79rem;
+  width: 100%;
+  min-width: 860px;
+}
+
+.fi-table thead th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0.4rem 0.55rem;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fi-table tbody td {
+  padding: 0.4rem 0.55rem;
+  border-bottom: 1px solid #f0f1f3;
+  vertical-align: top;
+  line-height: 1.4;
+}
+
+.fi-table tbody tr:last-child td { border-bottom: none; }
+.fi-table tbody tr:hover td { background: rgba(0,0,0,0.02); }
+
+.fi-pillar-row td { border-bottom: none !important; }
+
+.fi-ind-name { font-size: 0.8rem; font-weight: 500; color: var(--ink); min-width: 180px; }
+.fi-actual   { color: var(--muted); white-space: nowrap; }
+.fi-actual-val { font-family: var(--font-mono, monospace); font-size: 0.77rem; white-space: nowrap; }
+.fi-next-rel  { white-space: nowrap; color: var(--ink-2); }
+.fi-forecast  { font-size: 0.78rem; color: var(--ink-2); min-width: 160px; }
+.fi-notes     { font-size: 0.74rem; color: var(--muted); min-width: 180px; }
+.fi-baseline-col { text-align: center; }
+
+/* Status badges */
+.fi-status {
+  display: inline-block;
+  border-radius: 3px;
+  font-size: 0.70rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+.fi-status-consensus { background: #e8f5e9; color: #2e7d32; }
+.fi-status-sim       { background: #fff3e0; color: #e65100; }
+.fi-status-market    { background: #e8eaf6; color: #3949ab; }
+
+/* In-baseline badges */
+.fi-badge {
+  display: inline-block;
+  border-radius: 3px;
+  font-size: 0.70rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  letter-spacing: 0.02em;
+}
+.fi-badge-yes { background: #e8f5e9; color: #2e7d32; }
+.fi-badge-no  { background: #f5f5f5; color: #9e9e9e; }

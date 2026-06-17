@@ -437,17 +437,23 @@ export function indicatorHeatmap(divId, indicatorsWide, months = 24) {
 }
 
 // ─── Scenario: 12-month forecast overlay chart ──────────────────────────────
+// scenarioPaths entries may include optional fields:
+//   style: "solid" | "dash" | "dot"  (default "solid")
+//   width: number                     (default 2.5)
+//   markers: boolean                  (default true for solid, false for dash/dot)
+// baseline is now optional — if null/undefined the dotted gray line is omitted.
 export function scenarioForecastChart(divId, historical, todayMark, baseline, scenarioPaths) {
-  const lastBaseline = baseline[baseline.length - 1];
+  const refPath = baseline || scenarioPaths[0]?.path;
+  const lastRef = refPath ? refPath[refPath.length - 1] : null;
 
   // Shaded forecast zone
-  const forecastZone = {
+  const forecastZone = lastRef ? {
     type: "rect", xref: "x", yref: "paper",
-    x0: todayMark.date, x1: lastBaseline.date,
+    x0: todayMark.date, x1: lastRef.date,
     y0: 0, y1: 1,
     fillcolor: "rgba(0,0,0,0.03)",
     line: { width: 0 }, layer: "below",
-  };
+  } : null;
 
   // Threshold dotted lines
   const thresholds = [3.35, 2.70, 2.00].map(y => ({
@@ -468,25 +474,30 @@ export function scenarioForecastChart(divId, historical, todayMark, baseline, sc
     hovertemplate: "%{x|%b %Y}<br>MRS %{y:.2f}<extra></extra>",
   });
 
-  // Baseline (dotted)
-  traces.push({
-    x: [todayMark.date, ...baseline.map(r => r.date)],
-    y: [todayMark.display_score, ...baseline.map(r => r.display_score)],
-    type: "scatter", mode: "lines",
-    name: "Baseline (no shock)",
-    line: { color: "#94a3b8", width: 1.5, dash: "dot" },
-    hovertemplate: "Baseline<br>%{x|%b %Y}: %{y:.2f}<extra></extra>",
-  });
+  // Optional legacy dotted-baseline trace (only drawn if baseline is provided)
+  if (baseline) {
+    traces.push({
+      x: [todayMark.date, ...baseline.map(r => r.date)],
+      y: [todayMark.display_score, ...baseline.map(r => r.display_score)],
+      type: "scatter", mode: "lines",
+      name: "Mean-reversion baseline",
+      line: { color: "#94a3b8", width: 1.5, dash: "dot" },
+      hovertemplate: "Baseline<br>%{x|%b %Y}: %{y:.2f}<extra></extra>",
+    });
+  }
 
-  // Scenario paths
-  for (const { label, color, path } of scenarioPaths) {
+  // Scenario paths — support style/width per entry
+  for (const { label, color, path, style, width: lw, markers } of scenarioPaths) {
+    const dash     = style === "dash" ? "dash" : style === "dot" ? "dot" : "solid";
+    const lineW    = lw ?? (dash === "solid" ? 2.5 : 2.0);
+    const showMark = markers ?? (dash === "solid");
     traces.push({
       x: [todayMark.date, ...path.map(r => r.date)],
       y: [todayMark.display_score, ...path.map(r => r.display_score)],
-      type: "scatter", mode: "lines+markers",
+      type: "scatter", mode: showMark ? "lines+markers" : "lines",
       name: label,
-      line: { color, width: 2.5 },
-      marker: { size: 5, color },
+      line: { color, width: lineW, dash },
+      marker: { size: showMark ? 4 : 0, color },
       hovertemplate: `${label}<br>%{x|%b %Y}: %{y:.2f}<extra></extra>`,
     });
   }
@@ -509,7 +520,7 @@ export function scenarioForecastChart(divId, historical, todayMark, baseline, sc
   const layout = {
     margin: { t: 10, r: 90, b: 50, l: 45 },
     height: 420,
-    shapes: [forecastZone, ...thresholds],
+    shapes: [...(forecastZone ? [forecastZone] : []), ...thresholds],
     annotations: [
       { xref: "paper", yref: "y", x: 1.01, y: 3.35, text: "Expansion",   showarrow: false, xanchor: "left", font: { size: 9, color: "#64748b" } },
       { xref: "paper", yref: "y", x: 1.01, y: 2.70, text: "Neutral",     showarrow: false, xanchor: "left", font: { size: 9, color: "#64748b" } },

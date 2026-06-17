@@ -57,7 +57,7 @@ OUT_META    = PROC_DIR / "mrs_series_metadata.csv"
 OUT_LOG     = MRS_DIR  / "mrs_validation_log.md"
 
 STUDY_START = pd.Timestamp("2000-01-01")
-STUDY_END   = pd.Timestamp("2026-06-01")
+STUDY_END   = pd.Timestamp.today().normalize()   # always use today; was hardcoded to 2026-06-01
 HY_IG_RATIO = 1.8   # historical ratio of HY OAS to BAA spread (used for 2000-2023 proxy)
 MIN_OBS_SCORE = 24  # minimum monthly observations before percentile scores are meaningful
 

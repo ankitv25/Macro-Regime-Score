@@ -1,11 +1,11 @@
 {
   "version": "v2.1",
-  "generated_at": "2026-06-14 18:09",
+  "generated_at": "2026-06-17 12:57",
   "data_from": "2003-06-30",
   "data_through": "2026-04-30",
   "n_months": "275",
   "latest_regime_confirmed": "Neutral",
   "latest_composite_z": "0.0256",
   "latest_display_score": "3.0256",
-  "source": "Src/mrs_monitoring_store.py"
+  "source": "src/refresh_dashboard.py \u2192 outputs/monitoring/"
 }

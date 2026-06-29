@@ -3,24 +3,24 @@
     "level":"pillar",
     "name":"inflation",
     "flag":"deterioration warning",
-    "magnitude":-0.708
+    "magnitude":-0.868
   },
   {
     "level":"indicator",
     "name":"i_pce_dev",
     "flag":"deterioration warning",
-    "magnitude":-0.683
+    "magnitude":-0.744
   },
   {
     "level":"indicator",
     "name":"i_pce_mom",
     "flag":"deterioration warning",
-    "magnitude":-0.732
+    "magnitude":-0.993
   },
   {
     "level":"indicator",
     "name":"s_bond",
     "flag":"deterioration warning",
-    "magnitude":-0.631
+    "magnitude":-0.601
   }
 ]

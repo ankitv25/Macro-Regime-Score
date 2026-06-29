@@ -4,5 +4,10 @@
     "analyst_note": "Neutral, but with an unusual signature. The drag is above-target, re-accelerating <strong>inflation</strong> — not credit or growth stress — while growth and credit remain supportive. That makes today closer to 2021-style overheating risk than to the credit-led deterioration that normally precedes a downgrade. The actionable watch items are core PCE momentum and the financial-stress flag; a downgrade to Slowdown would most likely come through those, not through the labor market.",
     "author": "MRS desk",
     "as_of": "2026-06-15"
+  },
+  "2026-05-31": {
+    "analyst_note": "Neutral holds for a 40th month, with the composite ticking up to +0.061z (3.06/5) as the 3-month decline eased to -0.107z from -0.228z the prior month — the deterioration is decelerating, not reversing. Breadth stays constructive (diffusion 62%) and the score now sits closer to the upgrade boundary than to a downgrade, though four flags remain active. As in April, the watch is the <strong>inflation</strong> pillar rather than growth or credit: a regime change from here would most plausibly arrive through core-PCE momentum, not the labor market.",
+    "author": "MRS Agent",
+    "as_of": "2026-06-29"
   }
 }

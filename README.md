@@ -4,11 +4,11 @@ A transparent monthly composite indicator that classifies the US macro-financial
 
 ---
 
-**Current reading — April 2026**
+**Current reading — May 2026**
 
 | Composite z | Display | Regime | Month in regime | 3M change |
 |---|---|---|---|---|
-| +0.03 | 3.03 / 5 | **Neutral** | 39 | −0.23 |
+| +0.06 | 3.06 / 5 | **Neutral** | 40 | −0.11 |
 
 Active flags: Inflation pillar deterioration (above-target, accelerating); bond stress deteriorating.
 
@@ -54,7 +54,9 @@ Only the two genuine US contractions reach Contraction. Regime stability: **20 c
 │   └── MRS_Research_Paper.md      Working paper — motivation, method, results, limitations
 │
 ├── src/                            Pipeline scripts — run in order
-│   ├── pull_mrs_data.py           Step 1  Pull FRED series → data/raw/fred/
+│   ├── pull_fred_macro.py         Step 1a Pull core FRED series (rates, macro, NFCI, GDP) → data/raw/fred/
+│   ├── pull_spy_returns.py        Step 1b Refresh SPY monthly returns from seed + Yahoo → data/processed/
+│   ├── pull_mrs_data.py           Step 1c Pull supplemental FRED series → data/raw/fred/
 │   ├── process_mrs_inputs.py      Step 2  Build monthly input panel → data/processed/
 │   ├── mrs_proposed_framework.py  Step 3  v2.1 scoring engine (standalone backtest)
 │   ├── mrs_monitoring_store.py    Step 4  Build monitoring tables + MRS_Master.xlsx
@@ -67,7 +69,7 @@ Only the two genuine US contractions reach Contraction. Regime stability: **20 c
 │   ├── indicator.html             Per-indicator drilldown (13 indicators, one template)
 │   ├── about.html                 Methodology summary + data lineage
 │   ├── assets/                    CSS + modular JS (Plotly 2.32 via CDN, no build step)
-│   └── data/                      Pre-built JSON data files (current snapshot: Apr 2026)
+│   └── data/                      Pre-built JSON data files (current snapshot: May 2026)
 │
 └── outputs/
     └── monitoring/                 Current-snapshot monitoring tables (CSV)
@@ -118,7 +120,9 @@ The dashboard at `https://ankitv25.github.io/Macro-Regime-Score/` auto-deploys w
 The update agent calls these in order — run individually only for debugging:
 
 ```bash
-python src/pull_mrs_data.py            # Step 1: pull supplemental FRED series
+python src/pull_fred_macro.py          # Step 1a: pull core FRED series (rates, macro, NFCI, GDP)
+python src/pull_spy_returns.py         # Step 1b: refresh SPY monthly returns (seed + Yahoo)
+python src/pull_mrs_data.py            # Step 1c: pull supplemental FRED series
 python src/process_mrs_inputs.py       # Step 2: build monthly input panel
 PYTHONPATH=src python src/mrs_monitoring_store.py  # Step 3: score + monitoring tables
 python src/export_dashboard_data.py    # Step 4: export JSON for dashboard

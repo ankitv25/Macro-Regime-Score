@@ -37,23 +37,22 @@
       rule before a regime change is considered confirmed.
     </p>
     <p class="chart-caption">
-      This dashboard reads exclusively from <code>Research/MRS/MRS_Master.xlsx</code>,
-      produced by <code>Src/mrs_monitoring_store.py</code> from the canonical monitoring
-      tables (methodology Part VII) and exported to JSON by
-      <code>Src/export_dashboard_data.py</code>. No values are computed in the browser —
-      the only authored content is the monthly analyst note.
+      This dashboard reads only the JSON files under <code>dashboard/data/</code>,
+      exported by <code>src/export_dashboard_data.py</code> from the monitoring tables
+      in <code>outputs/monitoring/</code> (built by <code>src/mrs_monitoring_store.py</code>,
+      methodology Part VII). No values are computed in the browser — the only authored
+      content is the monthly analyst note.
     </p>
   </section>
 
   <section class="card span-5">
     <div class="card-head"><h2>Reference documents</h2></div>
-    <p class="chart-caption">Markdown/PowerPoint files in the repository. GitHub serves rendered views; <code>.md</code> over plain file hosting may show as source.</p>
+    <p class="chart-caption">Markdown files in this repository. GitHub serves rendered views.</p>
     <ul class="reflist">
-      <li><a href="../MRS_Methodology_and_Monitoring_Framework.md">Methodology &amp; Monitoring Framework</a> — full specification (v2.1)</li>
-      <li><a href="../MRS_Research_Paper.md">Research Paper</a></li>
-      <li><a href="../MRS_Overview_Deck.pptx">Overview Deck</a> (PowerPoint)</li>
-      <li><a href="../mrs_validation_log.md">Data Validation Log</a></li>
-      <li><a href="../MRS_Dashboard_Implementation_Plan.md">Dashboard Implementation Plan</a></li>
+      <li><a href="../methodology/MRS_Methodology.md">Methodology</a> — full specification (v2.1)</li>
+      <li><a href="../research/MRS_Research_Paper.md">Research Paper</a> — motivation, method, results, limitations</li>
+      <li><a href="../README.md">Repository overview</a> — pillars, results, how to run</li>
+      <li><a href="../UPDATING.md">Update runbook</a> — monthly refresh steps</li>
     </ul>
   </section>
 

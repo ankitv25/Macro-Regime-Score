@@ -66,6 +66,20 @@ MANIFEST      = CONFIG_DIR / "refresh_manifest.json"
 METADATA_JSON = DASH_DATA_DIR / "metadata.json"
 COMMENTARY    = DASH_DATA_DIR / "commentary.json"
 
+# Core raw inputs the monthly panel build hard-requires (no existence guard in
+# load_raw()). A fresh clone has none of these — the FULL_UPDATE pullers must
+# regenerate them before process_mrs_inputs.py runs.
+RAW_FRED_DIR  = REPO_ROOT / "data" / "raw" / "fred"
+PROC_DIR      = REPO_ROOT / "data" / "processed"
+REQUIRED_RAW  = [
+    RAW_FRED_DIR / "fred_rates_daily.csv",
+    RAW_FRED_DIR / "fred_macro_monthly.csv",
+    RAW_FRED_DIR / "fred_nfci_weekly.csv",
+    RAW_FRED_DIR / "fred_gdp_quarterly.csv",
+    RAW_FRED_DIR / "mrs_ipman_monthly.csv",
+    PROC_DIR / "asset_universe_returns.csv",
+]
+
 # ── MRS constants (must match mrs_monitoring_store.py) ───────────────────────
 DRIFT_BAND        = (0.45, 0.65)
 REGIME_THRESHOLDS = {"expansion": 0.35, "neutral": -0.30, "slowdown": -1.00}
@@ -401,23 +415,53 @@ def execute_full_update(dry_run: bool) -> RunResult:
     result = RunResult()
     result.path_taken = "FULL_UPDATE"
 
-    scripts = [
+    # Data-acquisition steps must all run before the panel build, so a fresh
+    # clone (e.g. the cloud routine) regenerates every raw input it needs.
+    pull_scripts = [
+        ("FRED core pull",       SRC_DIR / "pull_fred_macro.py",   None),
+        ("SPY returns refresh",  SRC_DIR / "pull_spy_returns.py",  None),
         ("FRED data pull",       SRC_DIR / "pull_mrs_data.py",     None),
+    ]
+    build_scripts = [
         ("Monthly panel build",  SRC_DIR / "process_mrs_inputs.py", None),
         ("MRS v2.1 engine",      SRC_DIR / "mrs_monitoring_store.py", None),
         ("Dashboard JSON export",SRC_DIR / "refresh_dashboard.py",  ["--skip-validate"]),
         ("Forecast inputs",      SRC_DIR / "generate_forecast_inputs.py", None),
     ]
 
-    for label, path, extra_args in scripts:
+    for label, path, extra_args in pull_scripts:
         ok_, output = run_script(label, path, extra_args, dry_run=dry_run)
         result.steps_run.append(label)
         if not ok_:
             result.errors.append(f"{label} failed")
             _alert(f"Pipeline halted at: {label}")
-            # Attempt fallback to rebuild if scoring fails
+            result.success = False
+            return result
+
+    # ── Pre-flight: the panel build hard-requires these raw inputs. Fail loud
+    #    with an actionable message instead of a bare FileNotFoundError deep in
+    #    load_raw() if a puller silently produced nothing.
+    if not dry_run:
+        missing = [str(p.relative_to(REPO_ROOT)) for p in REQUIRED_RAW if not p.exists()]
+        if missing:
+            msg = ("Required raw inputs missing after data pull: "
+                   + ", ".join(missing)
+                   + " — check that pull_fred_macro.py / pull_spy_returns.py ran "
+                     "(network reachable?). Cannot build the monthly panel.")
+            _alert(msg)
+            result.errors.append(msg)
+            result.success = False
+            return result
+
+    for label, path, extra_args in build_scripts:
+        ok_, output = run_script(label, path, extra_args, dry_run=dry_run)
+        result.steps_run.append(label)
+        if not ok_:
+            result.errors.append(f"{label} failed")
+            _alert(f"Pipeline halted at: {label}")
+            # Export/forecast are non-fatal — try to keep going
             if "export" in label.lower() or "forecast" in label.lower():
-                continue  # non-fatal — try to keep going
+                continue
             else:
                 result.success = False
                 return result

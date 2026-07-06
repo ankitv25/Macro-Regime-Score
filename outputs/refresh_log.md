@@ -1,17 +1,15 @@
-# MRS Refresh Log — last run 2026-06-29 12:52
+# MRS Refresh Log — last run 2026-07-06 14:07
 
-**Path:** FULL_UPDATE  |  **Success:** Yes  |  **Validated:** Yes
+**Path:** REBUILD_ONLY  |  **Success:** Yes  |  **Validated:** Yes
 
 **Data through:** 2026-05-31  |  **Regime:** Neutral  |  **Composite:** +0.0606z
 
-**Reason:** All 6 binding indicators are past their release dates for month 2026-05 — full pipeline warranted
+**Reason:** 1 binding indicator(s) released (g_nfp) but 5 pending (g_ipman, g_gdp, g_serv, i_pce_dev, i_pce_mom) — rebuilding JSON from existing CSVs; full update available once all binding indicators release
 
-**Critical:** 2 item(s)
-- OVERDUE BINDING: g_nfp next_release was 2026-06-05 (24 days ago) — update manifest next_release date or trigger full update
+**Critical:** 1 item(s)
 - 4 active flags — review pillar detail; composite may be obscuring cross-pillar deterioration
 
-**Watch:** 2 item(s)
+**Watch:** 1 item(s)
 - Upgrade watch: 0.289z from threshold (alert at 0.1z)
-- No analyst note for 2026-05 in commentary.json — add an entry before publishing
 
-Full log: `agent_run_log_2026-06-29_125256.md`
+Full log: `agent_run_log_2026-07-06_140721.md`

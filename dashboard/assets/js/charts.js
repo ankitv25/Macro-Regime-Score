@@ -113,14 +113,15 @@ export function contributionChart(divId, pillarsWide) {
   Plotly.newPlot(divId, traces, layout, PLOTLY_CONFIG);
 }
 
-// Ranked pillar contributions for the anchor month, bridging to the composite
-// total - the "what's driving the score right now" cross-section (complements
-// the time-series contributionChart above).
-export function attributionWaterfall(divId, ranked, compositeRow) {
+// Scenario decomposition waterfall: bridges the baseline composite to the
+// scenario composite at the peak month, one relative bar per pillar
+// (contribution = pillar weight x pillar-score gap, so the bars are exactly
+// additive - same arithmetic as the composite itself).
+export function scenarioGapWaterfall(divId, items, baseVal, scenVal, labels = {}) {
   const fmt = (v) => (v >= 0 ? "+" : "") + v.toFixed(3);
-  const x = [...ranked.map((r) => r.label), "Composite"];
-  const y = [...ranked.map((r) => r.contribution), compositeRow.composite];
-  const measure = [...ranked.map(() => "relative"), "total"];
+  const x = [labels.base || "Baseline", ...items.map((r) => r.label), labels.scen || "Scenario"];
+  const y = [baseVal, ...items.map((r) => r.value), scenVal];
+  const measure = ["absolute", ...items.map(() => "relative"), "total"];
 
   const trace = {
     type: "waterfall",
@@ -142,40 +143,14 @@ export function attributionWaterfall(divId, ranked, compositeRow) {
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
     font: { family: "var(--font-sans)", size: 11, color: "#475569" },
-    margin: { t: 22, r: 14, b: 28, l: 40 },
-    yaxis: { title: { text: "z-units", font: { size: 10 } }, zeroline: true, zerolinecolor: "rgba(15,23,42,0.35)", gridcolor: "rgba(148,163,184,0.18)", tickfont: { size: 10 } },
-    xaxis: { tickfont: { size: 11 } },
+    margin: { t: 26, r: 14, b: 30, l: 42 },
+    height: 260,
+    yaxis: { title: { text: "composite z", font: { size: 10 } }, zeroline: true, zerolinecolor: "rgba(15,23,42,0.35)", gridcolor: "rgba(148,163,184,0.18)", tickfont: { size: 10 } },
+    xaxis: { tickfont: { size: 10 } },
     showlegend: false,
   };
 
-  Plotly.newPlot(divId, [trace], layout, PLOTLY_CONFIG);
-}
-
-export function diffusionChart(divId, composite) {
-  const dates = composite.map((r) => r.date);
-  const diffusion = composite.map((r) => r.diffusion);
-
-  const traces = [
-    {
-      x: dates,
-      y: diffusion,
-      type: "scatter",
-      mode: "lines",
-      fill: "tozeroy",
-      fillcolor: "rgba(107,107,107,0.15)",
-      line: { color: "#6b6b6b", width: 1 },
-      hovertemplate: "%{x|%Y-%m}<br>%{y:.0%} of indicators positive<extra></extra>",
-    },
-  ];
-
-  const layout = {
-    margin: { t: 5, r: 20, b: 30, l: 50 },
-    yaxis: { range: [0, 1], tickformat: ".0%" },
-    xaxis: { type: "date" },
-    showlegend: false,
-  };
-
-  Plotly.newPlot(divId, traces, layout, PLOTLY_CONFIG);
+  Plotly.react(divId, [trace], layout, PLOTLY_CONFIG);
 }
 
 // --- Layer 2: pillar dashboards ---------------------------------------------
@@ -261,34 +236,6 @@ export function regimeBoxPlot(divId, pillarsLong, pillarId) {
 }
 
 // --- Layer 3: indicator dashboards ------------------------------------------
-
-export function indicatorSparkline(divId, indicatorsLong, code) {
-  const rows = indicatorsLong
-    .filter((r) => r.indicator === code)
-    .sort((a, b) => a.date.localeCompare(b.date));
-  const dates = rows.map((r) => r.date);
-  const z = rows.map((r) => r.z_score);
-
-  const traces = [
-    {
-      x: dates,
-      y: z,
-      type: "scatter",
-      mode: "lines",
-      line: { width: 1.25, color: PILLARS[INDICATORS[code].pillar].color },
-      hoverinfo: "skip",
-    },
-  ];
-
-  const layout = {
-    margin: { t: 5, r: 10, b: 20, l: 30 },
-    yaxis: { range: [-3.2, 3.2], zeroline: true, zerolinecolor: "rgba(0,0,0,0.4)", tickfont: { size: 9 } },
-    xaxis: { type: "date", showticklabels: false },
-    showlegend: false,
-  };
-
-  Plotly.newPlot(divId, traces, layout, { ...PLOTLY_CONFIG, staticPlot: true });
-}
 
 export function indicatorDualChart(divId, indicatorsLong, code) {
   const rows = indicatorsLong

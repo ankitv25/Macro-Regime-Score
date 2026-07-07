@@ -17,12 +17,21 @@
     <a href="trend.html" class="active">Trend &amp; Flags</a>
     <a href="scenario.html">Scenarios</a>
     <a href="about.html">About</a>
+      <a class="nav-ext" href="https://ankitv25.github.io/Asset-Allocation/" target="_blank" rel="noopener" title="Portfolio analytics platform (uses the MRS regime)">Portfolio ↗</a>
   </nav>
 </header>
 
 <div class="kpi-ribbon" id="kpi-ribbon"></div>
 
 <main class="db-grid">
+
+  <section class="card span-12 verdict-card">
+    <div class="card-head">
+      <h2>Monitoring verdict</h2>
+      <span class="card-sub">what the trend layer is saying this month — generated from the flags, movers and heatmap below</span>
+    </div>
+    <div class="verdict-body" id="trend-verdict"></div>
+  </section>
 
   <section class="card span-12">
     <div class="card-head">
@@ -35,17 +44,19 @@
   <section class="card span-12">
     <div class="card-head">
       <h2>Indicator heatmap · trailing 24 months</h2>
-      <span class="card-sub">z-scores; green = supportive, red = adverse</span>
+      <span class="card-sub" id="heatmap-sub">z-scores; green = supportive, red = adverse · click a cell to open that indicator</span>
     </div>
     <div id="heatmap"></div>
+    <p class="chart-read" id="heatmap-read"></p>
   </section>
 
   <section class="card span-6">
     <div class="card-head">
       <h2>Biggest movers</h2>
-      <span class="card-sub">largest 3-month z-score changes this month</span>
+      <span class="card-sub" id="movers-sub">largest 3-month z-score changes</span>
     </div>
     <table class="dtable" id="movers-table"></table>
+    <p class="chart-read" id="movers-read"></p>
   </section>
 
   <section class="card span-6">
@@ -54,6 +65,7 @@
       <span class="card-sub">confirmed regime history, most recent first</span>
     </div>
     <table class="dtable" id="transitions-table"></table>
+    <p class="chart-read" id="transitions-read"></p>
   </section>
 
 </main>

@@ -17,18 +17,21 @@ export function setAppbarStatus(latest, regime, metadata) {
   `;
 }
 
-// Renders a KPI ribbon from [{tone,label,value,sub}] into the given container id.
+// Renders a KPI ribbon from [{tone,label,value,sub,href?}] into the given
+// container id. Tiles with an href become links (aggregate → drill-down).
 export function renderKPIs(containerId, tiles) {
   const el = document.getElementById(containerId);
   if (!el) return;
   el.innerHTML = tiles
-    .map(
-      (t) => `<div class="kpi tone-${t.tone}">
+    .map((t) => {
+      const inner = `
         <div class="kpi-label">${t.label}</div>
         <div class="kpi-value">${t.value}</div>
-        <div class="kpi-sub">${t.sub ?? ""}</div>
-      </div>`
-    )
+        <div class="kpi-sub">${t.sub ?? ""}</div>`;
+      return t.href
+        ? `<a class="kpi tone-${t.tone} kpi-link" href="${t.href}">${inner}</a>`
+        : `<div class="kpi tone-${t.tone}">${inner}</div>`;
+    })
     .join("");
 }
 

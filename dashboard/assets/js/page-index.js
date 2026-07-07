@@ -13,7 +13,6 @@ import {
   verdictSentences,
   flagSentences,
   pillarDirectionSummary,
-  nearestEpisodes,
   signed,
   standingWord,
   pillarLabel,
@@ -21,9 +20,10 @@ import {
   attributionRanked,
   analystSummaryCards,
 } from "./narrative.js";
+import { similarMonths } from "./analogue.js";
 
 async function main() {
-  const [composite, pillarsWide, pillarsLong, regimePeriods, activeFlags, metadata, commentary, forecastInputs] = await Promise.all([
+  const [composite, pillarsWide, pillarsLong, regimePeriods, activeFlags, metadata, commentary, forecastInputs, indicatorsWide] = await Promise.all([
     loadJSON("composite_history.json"),
     loadJSON("pillars_wide.json"),
     loadJSON("pillars_long.json"),
@@ -32,6 +32,7 @@ async function main() {
     loadJSON("metadata.json"),
     loadJSON("commentary.json").catch(() => ({})),
     loadJSON("forecast_inputs.json").catch(() => null),
+    loadJSON("indicators_wide.json").catch(() => null),
   ]);
 
   const latest = composite[composite.length - 1];
@@ -62,7 +63,7 @@ async function main() {
   renderDataCalendar(metadata);
   renderForecastInputs(forecastInputs);
   contributionChart("drivers-chart", pillarsWide.slice(-24));
-  renderAnalogues(latest.composite);
+  renderAnalogues(indicatorsWide, composite, metadata);
 
   document.getElementById("status-footer").textContent = footerText(metadata);
 }
@@ -77,10 +78,10 @@ function renderOverviewKPIs(latest, regime, period, activeFlags) {
   renderKPIs("kpi-ribbon", [
     { tone: regimeTone(regime), label: "Composite MRS", value: latest.display_score.toFixed(2), sub: `z ${signed(latest.composite)} · ${regime}` },
     { tone: deltaTone(latest.comp_3m_chg), label: "3-month change", value: `${deltaGlyph(latest.comp_3m_chg)} ${Math.abs(latest.comp_3m_chg).toFixed(2)}`, sub: latest.direction_flag },
-    { tone: "neutral", label: "Breadth", value: `${(latest.diffusion * 100).toFixed(0)}%`, sub: `${posCount} of 13 positive · ${latest.breadth_check ?? "n/a"}` },
+    { tone: "neutral", label: "Breadth", value: `${(latest.diffusion * 100).toFixed(0)}%`, sub: `${posCount} of 13 positive · ${latest.breadth_check ?? "n/a"}`, href: "trend.html" },
     { tone: "neutral", label: "Regime age", value: `${latest.months_in_regime} mo`, sub: `${regime} since ${since}` },
-    { tone: "warn", label: "To downgrade", value: `${latest.dist_to_downgrade != null ? latest.dist_to_downgrade.toFixed(2) : "–"} z`, sub: `→ ${below}` },
-    { tone: activeFlags.length ? "neg" : "pos", label: "Active flags", value: `${activeFlags.length}`, sub: flagSummary(activeFlags) },
+    { tone: "warn", label: "To downgrade", value: `${latest.dist_to_downgrade != null ? latest.dist_to_downgrade.toFixed(2) : "–"} z`, sub: `→ ${below}`, href: "scenario.html" },
+    { tone: activeFlags.length ? "neg" : "pos", label: "Active flags", value: `${activeFlags.length}`, sub: flagSummary(activeFlags), href: "trend.html" },
   ]);
 }
 
@@ -227,12 +228,20 @@ function renderAnalystSummary(latest, pillarsLong, activeFlags, regime, commenta
     .map((c) => `<div class="sum-card"><h3>${c.title}</h3><ul>${c.items.map((i) => `<li>${i}</li>`).join("")}</ul></div>`)
     .join("");
 
-  const note = commentary?.[latest.date]?.analyst_note;
-  if (note) {
-    const meta = commentary[latest.date];
+  // Show the most recent hand-authored note at or before the anchor month
+  // (carried forward at most 2 months, labelled with its own date, so a
+  // fresh data month doesn't silently drop the analyst's context).
+  const noteDates = Object.keys(commentary || {}).filter((d) => d <= latest.date).sort();
+  const noteDate = noteDates[noteDates.length - 1];
+  const monthsOld = noteDate
+    ? (+latest.date.slice(0, 4) - +noteDate.slice(0, 4)) * 12 + (+latest.date.slice(5, 7) - +noteDate.slice(5, 7))
+    : null;
+  if (noteDate && monthsOld <= 2 && commentary[noteDate]?.analyst_note) {
+    const meta = commentary[noteDate];
     const by = meta.author ? ` — ${meta.author}${meta.as_of ? `, ${meta.as_of}` : ""}` : "";
+    const carried = monthsOld > 0 ? ` (written for ${noteDate.slice(0, 7)})` : "";
     const el = document.getElementById("analyst-note");
-    el.innerHTML = `<span class="note-tag">Analyst note${by}</span><p>${note}</p>`;
+    el.innerHTML = `<span class="note-tag">Analyst note${by}${carried}</span><p>${meta.analyst_note}</p>`;
     el.hidden = false;
   }
 }
@@ -392,20 +401,46 @@ function renderWhatChanged(activeFlags, pillarsLong, anchorDate) {
 }
 
 // --- analogues ---------------------------------------------------------------
+// Computed on the full 13-indicator z-vector (cosine similarity), not just the
+// composite level — two months can share a composite while looking nothing
+// alike underneath. Each analogue reports what actually followed it.
 
-function renderAnalogues(currentComposite) {
-  document.getElementById("analogues").innerHTML = nearestEpisodes(currentComposite, 3)
-    .map(
-      (e) => `<div class="episode">
+function renderAnalogues(indicatorsWide, composite, metadata) {
+  const el = document.getElementById("analogues");
+  if (!el || !indicatorsWide) return;
+
+  const anchorRow = indicatorsWide.find((r) => r.date === metadata.data_through);
+  if (!anchorRow) return;
+  const currentZ = {};
+  for (const [code] of Object.entries(anchorRow)) {
+    if (code.endsWith("_z") && anchorRow[code] != null) currentZ[code.slice(0, -2)] = +anchorRow[code];
+  }
+
+  const fmtMonth = (d) => {
+    const [y, m] = d.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, 1)).toLocaleString("default", { month: "short", year: "numeric", timeZone: "UTC" });
+  };
+
+  el.innerHTML = similarMonths(indicatorsWide, composite, currentZ, { n: 3 })
+    .map((a) => {
+      const outcome = a.fwd12 != null
+        ? `Over the following 12 months the composite moved <strong>${signed(a.fwd12)}z</strong>` +
+          (a.worst12 && a.worst12.composite < a.composite - 0.05 ? ` (worst point ${signed(a.worst12.composite)}z)` : "") +
+          `, ending in <strong>${a.regime12}</strong>.`
+        : "Less than 12 months of history followed this point.";
+      const curated = a.episode ? ` ${a.episode.note}` : "";
+      return `<div class="episode">
         <div class="ep-head">
-          <span class="regime-badge sm" style="background:${REGIME_COLORS[e.regime.split(" ")[0]] || "#999"}">${e.regime}</span>
-          <strong>${e.name}</strong>
-          <span class="ep-meta">${e.period} · z ${signed(e.mean)}</span>
+          <span class="regime-badge sm" style="background:${REGIME_COLORS[a.regime] || "#999"}">${a.regime}</span>
+          <strong>${fmtMonth(a.date)}${a.episode ? ` · ${a.episode.name}` : ""}</strong>
+          <span class="ep-meta">${(a.sim * 100).toFixed(0)}% indicator-vector match · composite ${signed(a.composite)}z</span>
         </div>
-        <p>${e.note}</p>
-      </div>`
-    )
-    .join("");
+        <p>${outcome}${curated}</p>
+      </div>`;
+    })
+    .join("") +
+    `<p class="chart-caption" style="margin-top:0.6rem">Match = cosine similarity of the full 13-indicator z-vector vs today (trailing 12 months excluded).
+     <a href="scenario.html">Replay any analogue on the Scenarios tab →</a></p>`;
 }
 
 main().catch((err) => {

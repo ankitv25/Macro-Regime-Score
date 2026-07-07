@@ -1,0 +1,13 @@
+Dashboard elevation: scenario engine completion + trend story + analogue finder
+
+Mirrors private commit fa18fbb (code only; data/ untouched - routine owns it).
+- Scenarios: store-anchored composite + engine-check badge, template-function
+  narratives (no hardcoded live readings), pillar decomposition waterfall,
+  13-cell indicator z-path grid, cosine analogue finder with 12-month
+  delta-replay, CSV export, regime->stance projection strip, ?scen= deep links
+- Trend & Flags: generated monitoring verdict, heatmap/movers/transitions
+  reads, cell + flag drilldowns, market-lead vintage chip
+- Overview: computed indicator-vector analogues with forward outcomes,
+  analyst-note carry-forward, KPI drilldowns
+- Nav: Scenarios link on indicator/pillar pages, Portfolio cross-link site-wide
+- about.html keeps public-repo reference links (only nav updated)

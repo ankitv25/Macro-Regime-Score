@@ -74,7 +74,7 @@ export function verdictSentences(latest) {
     `The US macro environment is in <strong>${regime}</strong> — month ${latest.months_in_regime} of this regime — and ${trendPhrase(latest)}.`
   );
   out.push(
-    `The largest drag on the composite is <strong>${pillarLabel(latest.top_drag)}</strong>; the largest support is <strong>${pillarLabel(latest.top_support)}</strong>. Breadth is ${(latest.diffusion * 100).toFixed(0)}% of the 13 indicators positive (${latest.breadth_check}).`
+    `The largest drag on the composite is <strong>${pillarLabel(latest.top_drag)}</strong>; the largest support is <strong>${pillarLabel(latest.top_support)}</strong>. Breadth is ${(latest.diffusion * 100).toFixed(0)}% of the 13 indicators positive${latest.breadth_check ? ` (${latest.breadth_check})` : ""}.`
   );
 
   const moves = [];

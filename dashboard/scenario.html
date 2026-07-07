@@ -17,6 +17,7 @@
     <a href="trend.html">Trend &amp; Flags</a>
     <a href="scenario.html" class="active">Scenarios</a>
     <a href="about.html">About</a>
+      <a class="nav-ext" href="https://ankitv25.github.io/Asset-Allocation/" target="_blank" rel="noopener" title="Portfolio analytics platform (uses the MRS regime)">Portfolio ↗</a>
   </nav>
 </header>
 
@@ -27,6 +28,7 @@
     <div class="card-head">
       <h2>Scenario selector</h2>
       <span class="card-sub">each scenario flows indicator z-scores → pillar scores → composite MRS — no direct score manipulation · historical replays apply actual indicator-level deltas from the episode to today's readings</span>
+      <span id="sv2-engine-check"></span>
     </div>
     <div class="sv2-selector" id="sv2-selector"></div>
   </section>
@@ -35,7 +37,8 @@
   <section class="card span-12">
     <div class="card-head">
       <h2>MRS path · 5-year history + 12-month scenario forecast</h2>
-      <span class="card-sub">shaded zone = 12-month forecast horizon · Baseline · Optimistic · Pessimistic from indicator-level forecasts · select a chip above to overlay a stress scenario</span>
+      <span class="card-sub" id="sv2-forecast-vintage"></span>
+      <button class="pg-btn pg-btn-secondary" id="sv2-export" title="Download the projected path (composite, pillars, regime, stance) as CSV">Export CSV</button>
     </div>
     <div id="sv2-forecast-chart" class="chart-xl"></div>
     <p class="chart-caption">
@@ -44,6 +47,33 @@
       <strong>Stress overlay</strong> (dotted, appears when a scenario chip is selected) applies macro or historical indicator-level shocks on top of today's readings.
       Display scale 1–5 = composite z + 3. Thresholds: 3.35 Expansion · 2.70 Neutral · 2.00 Slowdown.
     </p>
+    <div class="card-divider"></div>
+    <div class="card-head" style="margin-top:0.5rem">
+      <h2>What this path means for the portfolio</h2>
+      <span class="card-sub">projected confirmed regime + allocation stance, month by month · 2-month confirmation rule · PC regime-overlay stance mapping</span>
+    </div>
+    <div id="sv2-stance"></div>
+  </section>
+
+  <!-- Decomposition: waterfall + indicator paths (visible when a scenario is active) -->
+  <section class="card span-12" id="sv2-decomp-section" style="display:none">
+    <div class="sv2-decomp-grid">
+      <div>
+        <div class="card-head">
+          <h2>Why the gap · pillar decomposition at peak</h2>
+          <span class="card-sub">scenario vs baseline composite, bridged by pillar contribution (weight × score gap)</span>
+        </div>
+        <div id="sv2-waterfall"></div>
+        <p class="chart-caption" id="sv2-waterfall-read"></p>
+      </div>
+      <div>
+        <div class="card-head">
+          <h2>Indicator paths · 12 months</h2>
+          <span class="card-sub">solid = scenario · dashed = baseline forecast · Δ = gap at T+12 · click any cell to open the indicator</span>
+        </div>
+        <div class="ipath-grid" id="sv2-ipaths"></div>
+      </div>
+    </div>
   </section>
 
   <!-- Narrative + pillar chart (left) | Indicator table (right) -->
@@ -83,6 +113,15 @@
       </tbody>
     </table>
     <p class="chart-caption" id="sv2-table-caption"></p>
+  </section>
+
+  <!-- Historical analogue finder -->
+  <section class="card span-12">
+    <div class="card-head">
+      <h2>Closest historical starting points</h2>
+      <span class="card-sub">months whose full 13-indicator z-vector most resembles today's (cosine similarity, trailing 12 months excluded) — and what actually followed each</span>
+    </div>
+    <div class="ana-grid" id="sv2-analogues"></div>
   </section>
 
   <!-- Custom stress builder (shown only when Custom Builder selected) -->

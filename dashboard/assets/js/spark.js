@@ -39,6 +39,46 @@ export function sparkline(values, opts = {}) {
   return `<svg class="spark" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" preserveAspectRatio="none">${zero}${area}<path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" vector-effect="non-scaling-stroke"/>${dot}</svg>`;
 }
 
+// Two series on one shared scale: a reference path (dashed, muted) and a main
+// path (solid, colored). Used by the scenario page's indicator-path grid to
+// show baseline vs scenario for each of the 13 indicators.
+export function dualSparkline(refValues, mainValues, opts = {}) {
+  const width = opts.width ?? 170;
+  const height = opts.height ?? 40;
+  const color = opts.color ?? "#1d4ed8";
+  const refColor = opts.refColor ?? "#94a3b8";
+  const all = [...refValues, ...mainValues].filter((x) => x != null);
+  if (!all.length) return "";
+
+  const lo = Math.min(opts.min ?? Infinity, ...all, 0);
+  const hi = Math.max(opts.max ?? -Infinity, ...all, 0);
+  const range = hi - lo || 1;
+  const n = Math.max(refValues.length, mainValues.length);
+  const px = (i) => (n === 1 ? width / 2 : (i / (n - 1)) * width);
+  const py = (val) => height - ((val - lo) / range) * (height - 6) - 3;
+
+  const pathOf = (values) => {
+    let d = "";
+    values.forEach((val, i) => {
+      if (val == null) return;
+      d += (d ? "L" : "M") + px(i).toFixed(1) + " " + py(val).toFixed(1) + " ";
+    });
+    return d;
+  };
+
+  const zero = lo < 0 && hi > 0
+    ? `<line x1="0" x2="${width}" y1="${py(0).toFixed(1)}" y2="${py(0).toFixed(1)}" stroke="#cbd5e1" stroke-width="0.75" stroke-dasharray="2 2"/>`
+    : "";
+
+  let li = -1;
+  for (let i = mainValues.length - 1; i >= 0; i--) if (mainValues[i] != null) { li = i; break; }
+  const dot = li >= 0 ? `<circle cx="${px(li).toFixed(1)}" cy="${py(mainValues[li]).toFixed(1)}" r="2.4" fill="${color}"/>` : "";
+
+  return `<svg class="spark" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" preserveAspectRatio="none">${zero}` +
+    `<path d="${pathOf(refValues)}" fill="none" stroke="${refColor}" stroke-width="1.2" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/>` +
+    `<path d="${pathOf(mainValues)}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>${dot}</svg>`;
+}
+
 // A horizontal "where it sits in history" bar: a track from the historical min
 // to max with a marker at the current percentile, and a faint neutral midline.
 export function distBar(percentile) {

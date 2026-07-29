@@ -7,8 +7,7 @@ to commentary.json and advances the six binding-indicator next_release dates
 in config/refresh_manifest.json.
 
 Exit codes:
-  0  — pipeline ran and produced a new month (committed by the GH Action step)
-  2  — pipeline ran but data_through did not advance (no-op, expected most days)
+  0  — pipeline ran successfully (new month or resync); workflow diff-check decides commit
   1  — pipeline error; do not publish
 
 Run from repo root:
@@ -18,6 +17,7 @@ Run from repo root:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from calendar import monthrange
@@ -161,14 +161,29 @@ def main() -> int:
         print("\n✗  Validation FAILED — not publishing.", flush=True)
         return 1
 
-    # ── Check if data actually advanced ──────────────────────────────────────
+    # ── Check if data advanced or if revisions exist ─────────────────────────
     new_meta     = json.loads(METADATA.read_text())
     new_through  = new_meta.get("data_through")
-    if new_through == prev_through:
-        print(f"\n⊘  No new month (still {new_through}) — nothing to publish.", flush=True)
-        return 2
+    is_new_month = new_through != prev_through
 
-    print(f"\n✓  data_through advanced: {prev_through} → {new_through}", flush=True)
+    if is_new_month:
+        print(f"\n✓  data_through advanced: {prev_through} → {new_through}", flush=True)
+    else:
+        print(f"\n⊘  Same month ({new_through}) — checking for historical revisions or"
+              f" market-data updates to publish.", flush=True)
+
+    # Write result type to GITHUB_OUTPUT so the workflow can choose the commit message
+    gha_out = os.environ.get("GITHUB_OUTPUT")
+    if gha_out:
+        with open(gha_out, "a") as f:
+            f.write(f"result={'new_month' if is_new_month else 'resync'}\n")
+            f.write(f"data_through={new_through}\n")
+
+    if not is_new_month:
+        # No new month: no note, no manifest advance.
+        # Return 0 so the workflow diff-check runs and commits revisions if any.
+        print("▶  Skipping note/manifest advance (same month).", flush=True)
+        return 0
 
     # ── Analyst note ──────────────────────────────────────────────────────────
     comp_df  = pd.read_csv(COMP_CSV)

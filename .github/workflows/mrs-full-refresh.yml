@@ -5,9 +5,12 @@ name: MRS Full Refresh
 # manifest to main; the existing deploy-pages.yml deploys from there.
 #
 # Exit codes from mrs_gha_runner.py:
-#   0  — new month published (commit + push)
-#   2  — no new data (no-op, expected on most days)
-#   1  — pipeline error (fail the job so GitHub notifies)
+#   0  — pipeline ran OK (new month OR resync with revisions); workflow checks git diff
+#   1  — pipeline error (fail the job)
+#
+# result output:
+#   new_month  — data_through advanced; note + manifest were written
+#   resync     — same month but may contain FRED revisions / market updates
 #
 # Triggers:
 #   - Daily at 06:30 UTC (catches NFP ~1st Fri, IP ~16th, PCE ~27th)
@@ -44,28 +47,14 @@ jobs:
 
       - name: Run MRS full pipeline
         id: pipeline
-        shell: bash
-        run: |
-          set +e
-          python src/mrs_gha_runner.py
-          EXIT=$?
-          echo "exit_code=$EXIT" >> "$GITHUB_OUTPUT"
-          if [ "$EXIT" -eq 2 ]; then
-            echo "result=noop" >> "$GITHUB_OUTPUT"
-            echo "No new month available yet — pipeline ran clean, nothing to publish."
-            exit 0          # treat no-op as success so the job is green
-          elif [ "$EXIT" -ne 0 ]; then
-            echo "result=error" >> "$GITHUB_OUTPUT"
-            echo "::error::MRS pipeline failed with exit code $EXIT"
-            exit "$EXIT"
-          else
-            echo "result=new_month" >> "$GITHUB_OUTPUT"
-          fi
+        run: python src/mrs_gha_runner.py
+        # exit 0 = success (new month or resync), exit 1 = error
 
       - name: Check for real changes
         id: diff
-        if: steps.pipeline.outputs.result == 'new_month'
+        if: steps.pipeline.outcome == 'success'
         run: |
+          # Count changed files that carry real data (not just the generated_at timestamp)
           REAL=$(git diff --name-only -- \
             'outputs/monitoring/' \
             'dashboard/data/composite_history.json' \
@@ -80,9 +69,15 @@ jobs:
           echo "real_changes=$REAL" >> "$GITHUB_OUTPUT"
           echo "Non-timestamp changed files: $REAL"
 
+          # Also check metadata separately to detect pure timestamp-only diff
+          META_ONLY=$(git diff -- 'dashboard/data/metadata.json' | \
+            grep '^[+-]' | grep -v '^[+-][+-][+-]' | \
+            grep -v 'generated_at' | wc -l)
+          echo "metadata_data_lines_changed=$META_ONLY" >> "$GITHUB_OUTPUT"
+
       - name: Commit and push
         if: >
-          steps.pipeline.outputs.result == 'new_month' &&
+          steps.pipeline.outcome == 'success' &&
           steps.diff.outputs.real_changes != '0' &&
           steps.diff.outputs.real_changes != ''
         run: |
@@ -99,17 +94,25 @@ jobs:
           import json; m=json.load(open('dashboard/data/metadata.json'))
           print(f\"{float(m['latest_composite_z']):+.3f}\")")
 
+          RESULT="${{ steps.pipeline.outputs.result }}"
+          if [ "$RESULT" = "new_month" ]; then
+            MSG="MRS update: ${DATA_THROUGH} (Regime: ${REGIME}, z ${COMP_Z})"
+          else
+            MSG="MRS resync: ${DATA_THROUGH} — FRED revisions + market data update"
+          fi
+
           git add \
             outputs/monitoring/ \
             dashboard/data/ \
             config/refresh_manifest.json
 
-          git diff --staged --quiet || git commit -m \
-            "MRS update: ${DATA_THROUGH} (Regime: ${REGIME}, z ${COMP_Z})"
+          git diff --staged --quiet || git commit -m "$MSG"
 
           git pull --rebase origin main
           git push origin main
 
       - name: No-op summary
-        if: steps.pipeline.outputs.result == 'noop'
-        run: echo "No new month available on FRED yet — will retry tomorrow at 06:30 UTC."
+        if: >
+          steps.pipeline.outcome == 'success' &&
+          (steps.diff.outputs.real_changes == '0' || steps.diff.outputs.real_changes == '')
+        run: echo "Pipeline ran clean — no real data changes vs committed state. Nothing to publish."

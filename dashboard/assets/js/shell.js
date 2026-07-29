@@ -13,7 +13,6 @@ export function setAppbarStatus(latest, regime, metadata) {
     <span class="ab-badge" style="background:${REGIME_COLORS[regime] || "#999"}">${regime}</span>
     <span class="ab-metric"><b>${latest.display_score.toFixed(2)}</b><i>/5</i></span>
     <span class="ab-sub">z ${signed(latest.composite)} · 3m ${deltaGlyph(latest.comp_3m_chg)} ${signed(latest.comp_3m_chg)}</span>
-    <span class="ab-sub muted">data through ${metadata.data_through}</span>
   `;
 }
 
@@ -37,5 +36,12 @@ export function renderKPIs(containerId, tiles) {
 
 // Standard footer string.
 export function footerText(metadata) {
-  return `MRS ${metadata.version} · ${metadata.n_months} months (${metadata.data_from} → ${metadata.data_through}) · generated ${metadata.generated_at}`;
+  const fmtMonth = (iso) => {
+    const [y, m] = iso.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, 1)).toLocaleString("default", { month: "short", year: "numeric", timeZone: "UTC" });
+  };
+  const refreshed = metadata.generated_at
+    ? fmtMonth(metadata.generated_at.slice(0, 10))
+    : "";
+  return `MRS ${metadata.version} · ${metadata.n_months} months · through ${fmtMonth(metadata.data_through)}${refreshed ? ` · refreshed ${refreshed}` : ""}`;
 }

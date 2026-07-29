@@ -221,7 +221,12 @@ function renderPillarMovement(pillarsLong, anchorDate, ranked) {
 // --- analyst summary -------------------------------------------------------------
 
 function renderAnalystSummary(latest, pillarsLong, activeFlags, regime, commentary) {
-  document.getElementById("summary-date").textContent = latest.date.slice(0, 7);
+  const fmtMonth = (iso) => {
+    const [y, m] = iso.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, 1)).toLocaleString("default", { month: "short", year: "numeric", timeZone: "UTC" });
+  };
+
+  document.getElementById("summary-date").textContent = fmtMonth(latest.date);
 
   const cards = analystSummaryCards(latest, pillarsLong, activeFlags, regime, latest.date);
   document.getElementById("summary-grid").innerHTML = cards
@@ -229,8 +234,7 @@ function renderAnalystSummary(latest, pillarsLong, activeFlags, regime, commenta
     .join("");
 
   // Show the most recent hand-authored note at or before the anchor month
-  // (carried forward at most 2 months, labelled with its own date, so a
-  // fresh data month doesn't silently drop the analyst's context).
+  // (carried forward at most 2 months).
   const noteDates = Object.keys(commentary || {}).filter((d) => d <= latest.date).sort();
   const noteDate = noteDates[noteDates.length - 1];
   const monthsOld = noteDate
@@ -238,10 +242,10 @@ function renderAnalystSummary(latest, pillarsLong, activeFlags, regime, commenta
     : null;
   if (noteDate && monthsOld <= 2 && commentary[noteDate]?.analyst_note) {
     const meta = commentary[noteDate];
-    const by = meta.author ? ` — ${meta.author}${meta.as_of ? `, ${meta.as_of}` : ""}` : "";
-    const carried = monthsOld > 0 ? ` (written for ${noteDate.slice(0, 7)})` : "";
+    const author = meta.author || "MRS Agent";
+    const carried = monthsOld > 0 ? ` · prev month` : "";
     const el = document.getElementById("analyst-note");
-    el.innerHTML = `<span class="note-tag">Analyst note${by}${carried}</span><p>${meta.analyst_note}</p>`;
+    el.innerHTML = `<span class="note-tag">${author} · ${fmtMonth(noteDate)}${carried}</span><p>${meta.analyst_note}</p>`;
     el.hidden = false;
   }
 }
@@ -344,10 +348,16 @@ function renderForecastInputs(forecastData) {
     market_implied:     "Market-implied",
   };
 
-  const fmtDate = (s) => s ? s.slice(0, 7) : "—";
+  const fmtDate = (s) => {
+    if (!s) return "—";
+    const [y, m] = s.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, 1)).toLocaleString("default", { month: "short", year: "numeric", timeZone: "UTC" });
+  };
+  const _today = new Date(); _today.setHours(0, 0, 0, 0);
   const fmtNext = (s) => {
     if (!s) return "—";
     const d = new Date(s);
+    if (d < _today) return `<span style="opacity:0.4;font-style:italic">released</span>`;
     return d.toLocaleDateString("default", { month: "short", day: "numeric" });
   };
 

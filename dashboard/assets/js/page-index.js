@@ -303,20 +303,28 @@ function renderDataCalendar(metadata) {
   }
   function daysTo(d) { return Math.ceil((d - today) / 86400000); }
 
-  const bindingReleases = [
-    { name: `Core PCE (${new Date(pendingYear, pendingMonth, 1).toLocaleString("default", { month: "short", year: "numeric" })})`, date: addDays(pendingEnd, 28) },
-    { name: `Core PCE (${nextPLabel})`, date: addDays(nextPEnd, 28) },
-    { name: `NFP (${nextPLabel})`,      date: firstFriday(nextPY, nextPM) },
-  ];
+  const pendingLabel = new Date(pendingYear, pendingMonth, 1).toLocaleString("default", { month: "short", year: "numeric" });
+  const pendingPCE   = addDays(pendingEnd, 28);
 
-  const nextBinding = bindingReleases.find((r) => daysTo(r.date) > 0);
   const el = document.getElementById("update-countdown");
   if (!el) return;
-  if (nextBinding) {
-    const d = daysTo(nextBinding.date);
-    el.textContent = `next MRS update in ${d} day${d === 1 ? "" : "s"} · ${nextBinding.name}`;
+
+  if (daysTo(pendingPCE) <= 0) {
+    // All binding releases for the pending month have already passed.
+    el.textContent = `${pendingLabel} data now available · pipeline runs daily at 06:30 UTC`;
   } else {
-    el.textContent = "update available — run update_mrs.py";
+    const bindingReleases = [
+      { name: `NFP (${pendingLabel})`,      date: firstFriday(pendingYear, pendingMonth) },
+      { name: `Core PCE (${pendingLabel})`, date: pendingPCE },
+      { name: `Core PCE (${nextPLabel})`,   date: addDays(nextPEnd, 28) },
+    ];
+    const nextBinding = bindingReleases.find((r) => daysTo(r.date) > 0);
+    if (nextBinding) {
+      const d = daysTo(nextBinding.date);
+      el.textContent = `next MRS update in ${d} day${d === 1 ? "" : "s"} · ${nextBinding.name}`;
+    } else {
+      el.textContent = `${pendingLabel} data available · pipeline runs daily at 06:30 UTC`;
+    }
   }
 }
 

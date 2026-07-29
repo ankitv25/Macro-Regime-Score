@@ -4,9 +4,14 @@ name: MRS Full Refresh
 # FRED access). Commits monitoring CSVs, dashboard JSON, commentary, and
 # manifest to main; the existing deploy-pages.yml deploys from there.
 #
+# Exit codes from mrs_gha_runner.py:
+#   0  — new month published (commit + push)
+#   2  — no new data (no-op, expected on most days)
+#   1  — pipeline error (fail the job so GitHub notifies)
+#
 # Triggers:
 #   - Daily at 06:30 UTC (catches NFP ~1st Fri, IP ~16th, PCE ~27th)
-#   - Manual via workflow_dispatch (for on-demand runs or catch-up)
+#   - Manual via workflow_dispatch (for on-demand or catch-up runs)
 
 on:
   workflow_dispatch:
@@ -39,14 +44,28 @@ jobs:
 
       - name: Run MRS full pipeline
         id: pipeline
-        run: python src/mrs_gha_runner.py
-        # exit 0 = new month published, exit 2 = no new data (no-op), exit 1 = error
+        shell: bash
+        run: |
+          set +e
+          python src/mrs_gha_runner.py
+          EXIT=$?
+          echo "exit_code=$EXIT" >> "$GITHUB_OUTPUT"
+          if [ "$EXIT" -eq 2 ]; then
+            echo "result=noop" >> "$GITHUB_OUTPUT"
+            echo "No new month available yet — pipeline ran clean, nothing to publish."
+            exit 0          # treat no-op as success so the job is green
+          elif [ "$EXIT" -ne 0 ]; then
+            echo "result=error" >> "$GITHUB_OUTPUT"
+            echo "::error::MRS pipeline failed with exit code $EXIT"
+            exit "$EXIT"
+          else
+            echo "result=new_month" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Check for real changes
         id: diff
-        if: steps.pipeline.outcome == 'success' && steps.pipeline.outputs.exit_code != '2'
+        if: steps.pipeline.outputs.result == 'new_month'
         run: |
-          # Exclude pure timestamp-only diffs in metadata.json
           REAL=$(git diff --name-only -- \
             'outputs/monitoring/' \
             'dashboard/data/composite_history.json' \
@@ -59,11 +78,11 @@ jobs:
             'dashboard/data/commentary.json' \
             'config/refresh_manifest.json' | wc -l)
           echo "real_changes=$REAL" >> "$GITHUB_OUTPUT"
-          echo "Changed files (non-timestamp): $REAL"
+          echo "Non-timestamp changed files: $REAL"
 
       - name: Commit and push
         if: >
-          steps.pipeline.outcome == 'success' &&
+          steps.pipeline.outputs.result == 'new_month' &&
           steps.diff.outputs.real_changes != '0' &&
           steps.diff.outputs.real_changes != ''
         run: |
@@ -71,21 +90,14 @@ jobs:
           git config user.email "mrs-agent@users.noreply.github.com"
 
           DATA_THROUGH=$(python3 -c "
-          import json
-          m = json.load(open('dashboard/data/metadata.json'))
-          print(m['data_through'][:7])
-          ")
+          import json; m=json.load(open('dashboard/data/metadata.json'))
+          print(m['data_through'][:7])")
           REGIME=$(python3 -c "
-          import json
-          m = json.load(open('dashboard/data/metadata.json'))
-          print(m['latest_regime_confirmed'])
-          ")
+          import json; m=json.load(open('dashboard/data/metadata.json'))
+          print(m['latest_regime_confirmed'])")
           COMP_Z=$(python3 -c "
-          import json
-          m = json.load(open('dashboard/data/metadata.json'))
-          z = float(m['latest_composite_z'])
-          print(f'{z:+.3f}')
-          ")
+          import json; m=json.load(open('dashboard/data/metadata.json'))
+          print(f\"{float(m['latest_composite_z']):+.3f}\")")
 
           git add \
             outputs/monitoring/ \
@@ -95,16 +107,9 @@ jobs:
           git diff --staged --quiet || git commit -m \
             "MRS update: ${DATA_THROUGH} (Regime: ${REGIME}, z ${COMP_Z})"
 
-          # Pull with rebase in case main advanced while the pipeline ran
           git pull --rebase origin main
           git push origin main
 
       - name: No-op summary
-        if: steps.pipeline.outcome == 'success' && steps.diff.outputs.real_changes == '0'
-        run: echo "Pipeline ran — no real data changes (timestamp-only diff or no new month). Nothing committed."
-
-      - name: Pipeline error summary
-        if: steps.pipeline.outcome != 'success'
-        run: |
-          echo "::error::MRS pipeline failed — check logs above."
-          exit 1
+        if: steps.pipeline.outputs.result == 'noop'
+        run: echo "No new month available on FRED yet — will retry tomorrow at 06:30 UTC."

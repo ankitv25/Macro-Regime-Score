@@ -1,11 +1,11 @@
 {
   "version": "v2.1",
-  "generated_at": "2026-07-29 14:44",
+  "generated_at": "2026-07-31 09:25",
   "data_from": "2003-06-30",
-  "data_through": "2026-05-31",
-  "n_months": "276",
+  "data_through": "2026-06-30",
+  "n_months": "277",
   "latest_regime_confirmed": "Neutral",
-  "latest_composite_z": "0.058",
-  "latest_display_score": "3.058",
+  "latest_composite_z": "0.1282",
+  "latest_display_score": "3.1282",
   "source": "src/refresh_dashboard.py \u2192 outputs/monitoring/"
 }

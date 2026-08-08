@@ -4,13 +4,9 @@ A transparent monthly composite indicator that classifies the US macro-financial
 
 ---
 
-**Current reading — May 2026**
+**Current reading:** see the [live dashboard](https://ankitv25.github.io/Macro-Regime-Score/) — composite, regime, active flags and freshness are published there and refresh daily.
 
-| Composite z | Display | Regime | Month in regime | 3M change |
-|---|---|---|---|---|
-| +0.06 | 3.06 / 5 | **Neutral** | 40 | −0.11 |
-
-Active flags: Inflation pillar deterioration (above-target, accelerating); bond stress deteriorating.
+> This README deliberately does not restate the current score. A hand-maintained reading here is a second copy of state that goes stale silently, which is precisely what let the live dashboard sit ten days behind its own data in Jul–Aug 2026. The dashboard footer states `Updated:` (last rebuild) and `Data through:` (last scored month-end) so freshness is always checkable at the source.
 
 ---
 
@@ -69,7 +65,7 @@ Only the two genuine US contractions reach Contraction. Regime stability: **20 c
 │   ├── indicator.html             Per-indicator drilldown (13 indicators, one template)
 │   ├── about.html                 Methodology summary + data lineage
 │   ├── assets/                    CSS + modular JS (Plotly 2.32 via CDN, no build step)
-│   └── data/                      Pre-built JSON data files (current snapshot: May 2026)
+│   └── data/                      Pre-built JSON data files (rebuilt daily; see metadata.json)
 │
 └── outputs/
     └── monitoring/                 Current-snapshot monitoring tables (CSV)

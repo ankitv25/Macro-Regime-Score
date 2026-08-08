@@ -1,24 +1,54 @@
 # MRS Refresh Handoff
 
-**Last updated:** 2026-06-17  
-**Live dashboard:** https://ankitv25.github.io/Macro-Regime-Score/  
-**Public repo:** https://github.com/ankitv25/Macro-Regime-Score  
-**Private repo:** `Research/MRS/dashboard/` (in Summer_Investment_Platform)
+**Last updated:** 2026-08-08
+**Live dashboard:** https://ankitv25.github.io/Macro-Regime-Score/
+**Public repo:** https://github.com/ankitv25/Macro-Regime-Score
+**Operational runbook:** [`UPDATING.md`](UPDATING.md) — read that first; this document covers the data contracts underneath it.
 
 ---
 
 ## Current State
 
-| Field | Value |
-|---|---|
-| Data through | **2026-04-30** (April 2026 — binding constraint: core PCE) |
-| Composite z | **+0.026** (display 3.03/5) |
-| Regime | **Neutral**, month 39 (since 2023-02) |
-| Direction | Deteriorating (3M Δ = −0.228z) |
-| Active flags | 4 (inflation pillar + i_pce_dev + i_pce_mom + s_bond deterioration) |
-| Dashboard version | v2.1 |
-| Last git commit | `c0778a6` (2026-06-16) — forecast paths + Overview table |
-| Drift watch | OK (expanding std 0.547 ∈ [0.45, 0.65]) |
+Deliberately **not** restated here. A hand-maintained "current reading" table in a doc is a second copy of state that decays silently — the exact class of bug that froze the live dashboard for ten days in Jul–Aug 2026.
+
+The single source of truth is the pipeline output:
+
+```bash
+# authoritative
+cat dashboard/data/metadata.json
+tail -3 outputs/monitoring/mrs_composite_history.csv
+cat outputs/refresh_log.md          # summary of the last published run
+
+# what the public is actually seeing
+curl -s "https://ankitv25.github.io/Macro-Regime-Score/data/metadata.json?cb=$RANDOM"
+```
+
+The last two must agree. If they do not, the deploy is the problem, not the data — see `UPDATING.md` §2–3.
+
+---
+
+## Automation (the normal path)
+
+```
+GitHub Actions: .github/workflows/mrs-full-refresh.yml
+  cron '30 14 * * *'  (daily, 14:30 UTC)
+        ↓
+  python src/mrs_gha_runner.py        ← runs Steps 1–6 below, end to end
+        ↓
+  new month  → commentary note + manifest advance + "MRS update: YYYY-MM"
+  resync     → "MRS resync: YYYY-MM"
+  no change  → commits nothing (timestamp-only diffs are discarded)
+        ↓
+  push to main as "MRS Agent" (GITHUB_TOKEN)
+        ↓
+GitHub Actions: .github/workflows/deploy-pages.yml
+  triggered by workflow_run — NOT by push; GITHUB_TOKEN pushes do not raise
+  push events, which is what broke the deploy for ten days in Jul–Aug 2026
+        ↓
+  GitHub Pages (~20s)
+```
+
+Everything below documents the pipeline the runner drives, the data contracts it must satisfy, and how to drive it by hand.
 
 ---
 
@@ -60,23 +90,21 @@ Step 6  Validate
         python src/validate_dashboard.py   → exits 1 if any check fails
 
 Step 7  Commit + push
-        git add outputs/monitoring/ dashboard/data/
+        git add outputs/monitoring/ outputs/refresh_log.md dashboard/data/ \
+                config/refresh_manifest.json
         git commit -m "MRS update: YYYY-MM (Regime: X, z ±0.00)"
         git push origin main
-        → GitHub Actions deploys dashboard/ to GitHub Pages (~60s)
+        → deploy-pages.yml publishes dashboard/ to GitHub Pages (~20s)
 ```
 
-### Shortcut Refresh (when monitoring CSVs are already current)
+### Orchestrators
 
-```bash
-python src/refresh_dashboard.py    # Steps 4b + 5 + 6 in one command
-```
-
-### Full Monthly Update (new data available)
-
-```bash
-python src/update_mrs.py           # Steps 1–6 orchestrated in one command
-```
+| Command | Use |
+|---|---|
+| `python src/mrs_gha_runner.py` | **Steps 1–6, the one the automation runs.** Prefer this. |
+| `python src/refresh_dashboard.py` | Steps 4b + 5 + 6 — rebuild JSON when the monitoring CSVs are already current |
+| `python src/update_mrs.py` | Earlier full-pipeline orchestrator; superseded by `mrs_gha_runner.py` |
+| `python src/mrs_smart_agent.py` | Earlier release-gated agent, driven by a claude.ai cloud routine; superseded — see Known Issues |
 
 ---
 
@@ -85,7 +113,12 @@ python src/update_mrs.py           # Steps 1–6 orchestrated in one command
 | File | Role | Committed? |
 |---|---|---|
 | `config/refresh_manifest.json` | **NEW**: Forecast assumptions (delta arrays per indicator) + indicator metadata. Edit when economic outlook changes. | Yes |
-| `src/update_mrs.py` | Full pipeline orchestrator (Steps 1–6). Main entry point for monthly refresh. | Yes |
+| `src/mrs_gha_runner.py` | **Pipeline orchestrator used by the daily GitHub Actions job** (Steps 1–6) + analyst note + manifest advance + `outputs/refresh_log.md`. Main entry point. | Yes |
+| `src/update_mrs.py` | Earlier full-pipeline orchestrator (Steps 1–6). Superseded by `mrs_gha_runner.py`. | Yes |
+| `src/mrs_smart_agent.py` | Earlier release-gated agent (cloud routine). Superseded; still writes `outputs/agent_run_log_*.md`. | Yes |
+| `.github/workflows/mrs-full-refresh.yml` | Daily 14:30 UTC refresh + conditional commit. | Yes |
+| `.github/workflows/deploy-pages.yml` | Publishes `dashboard/` to Pages on `workflow_run` of the refresh, on `push` to `dashboard/**`, or manually. | Yes |
+| `outputs/refresh_log.md` | Human-readable summary of the last **published** run. Regenerated each run, committed only when the run publishes. | Yes |
 | `src/pull_mrs_data.py` | Pull supplemental FRED series (IPMAN, BAA10YM, PCES, STLFSI2). | Yes |
 | `src/process_mrs_inputs.py` | Align all raw data → monthly panel. STUDY_END now dynamic. | Yes |
 | `src/mrs_monitoring_store.py` | v2.1 engine: score indicators → pillars → composite → monitoring tables + MRS_Master.xlsx. | Yes |
@@ -234,17 +267,19 @@ Populated from `forecast_inputs.json` by `page-index.js`.
 
 ## Refresh Commands
 
-### Standard monthly refresh (after all data for month M is available)
+> **Normal operation requires none of these.** The daily workflow runs the pipeline and publishes. These are for when the automation is down, or when you are changing forecast assumptions by hand.
+
+### Standard refresh (manual fallback — the exact pipeline the workflow runs)
 
 ```bash
 # Run from repo root
-python src/update_mrs.py
+python src/mrs_gha_runner.py
 
-# Optional: add analyst note
+# Optional: replace the auto-drafted analyst note with real interpretation
 # vim dashboard/data/commentary.json
 
 # Commit and publish
-git add outputs/monitoring/ dashboard/data/
+git add outputs/monitoring/ outputs/refresh_log.md dashboard/data/ config/refresh_manifest.json
 git commit -m "MRS update: YYYY-MM (Regime: X, z ±0.00)"
 git push origin main
 ```
@@ -303,78 +338,58 @@ Exit code 0 = all clear. Exit code 1 = at least one hard error.
 
 ## Known Issues
 
-1. **`data/` folder not present on this machine**: The raw FRED data folder (`data/raw/fred/`) is gitignored. A full pipeline run requires re-pulling from FRED (`python src/pull_mrs_data.py`). The monitoring CSVs and dashboard JSONs are committed and sufficient for a dashboard rebuild via `refresh_dashboard.py`.
+1. **Two automations write to this repo.** Alongside the GitHub Actions job, a claude.ai cloud routine (`trig_015iBHiHLBoXtDL1tjAcAZdm`, cron `0 14 6,16,25,29,1 * *`) still runs `src/mrs_smart_agent.py` and commits `outputs/agent_run_log_*.md`. Since the Actions runner took over it has produced run logs only — it has not published data — but it duplicates the decision logic and is a second potential writer to the same files. The GitHub Actions job is the system of record. **Recommendation: disable the routine** at https://claude.ai/code/routines.
 
-2. **May 2026 partial data in monitoring CSVs**: The indicator history CSV has a 2026-05-31 row for market-based indicators (s_spy_dd, s_vix, c_ig_level, etc.) but the composite and pillar scores are null for that month because binding indicators (core PCE, NFP) are not yet available. This is correct behavior. The `metadata.data_through = 2026-04-30` accurately reflects the last complete month.
+2. **`outputs/refresh_log.md` lags no-op runs.** The runner regenerates it every run, but the workflow only commits when there is a real data change. Its heading says "last published run" for that reason. Committing it unconditionally would reintroduce the daily timestamp-churn commits the 2026-06-23 audit removed.
 
-3. **`forecast_inputs.json` paths use 2026-05-31 z-scores as starting points**: The monitoring CSV has May 2026 z-scores for market indicators. `generate_forecast_inputs.py` picks the latest non-null z-score per indicator, which means market indicators use May values while fundamental indicators use April values. This is the correct behavior — forecast paths start from the most recent available data.
+3. **`data/` is gitignored.** A fresh clone has no raw FRED data. The committed monitoring CSVs and dashboard JSON are enough to rebuild the dashboard via `refresh_dashboard.py`; a full pipeline run re-pulls from FRED.
 
-4. **`commentary.json` is manual-only**: The monthly analyst note must be added by hand. No script generates it. The format is `{ "YYYY-MM-DD": { "analyst_note": "...", "author": "...", "as_of": "YYYY-MM-DD" } }`.
+4. **The newest month is often partial, by design.** The indicator history carries rows for market-based indicators (`s_spy_dd`, `s_vix`, `c_ig_level`, `l_curve`, …) as soon as the month closes, while the composite and pillar scores stay null until every binding indicator has released. `metadata.data_through` reflects the last **complete** month. This is correct behaviour, not staleness.
 
-5. **Private repo sync is manual**: After a public repo refresh, the private repo (`Research/MRS/dashboard/`) must be synced manually with `cp` commands (macOS TCC permissions permitting). A future improvement would automate this with a post-commit hook.
+5. **Forecast paths mix vintages.** `generate_forecast_inputs.py` starts each indicator's path from its latest non-null z-score, so market indicators may start from a more recent month than fundamental ones. This is intended — paths should start from the most recent available data.
+
+6. **`commentary.json` notes are auto-drafted, not authored.** `mrs_gha_runner.py` writes a mechanical note on a new month (regime, momentum, breadth, top drag/support, distance to boundary). Nothing overwrites an existing entry, so replacing it by hand is safe and encouraged when a month deserves real interpretation.
+
+7. **A stale duplicate of `dashboard/` exists in the private repo** at `Research/MRS/dashboard/` (Summer_Investment_Platform). That repo's Pages site is disabled, so the copy is served nowhere and drifts from this one. This repo is the only published dashboard. Do not sync to it — treat it as dead.
 
 ---
 
 ## Next Recommended Actions
 
-### Immediate (next refresh in late June/early July 2026)
-
-When May 2026 core PCE is released (~June 27):
-
-```bash
-# 1. Pull new data
-python src/pull_mrs_data.py
-
-# 2. Rebuild monthly panel
-python src/process_mrs_inputs.py
-
-# 3. Score new month
-PYTHONPATH=src python src/mrs_monitoring_store.py
-
-# 4. Rebuild dashboard JSON + validate
-python src/refresh_dashboard.py
-
-# 5. Review output — check:
-#    - Did composite change significantly?
-#    - Did regime approach a threshold?
-#    - Did any new flags raise?
-#    cat outputs/refresh_log.md
-
-# 6. Update analyst note
-vim dashboard/data/commentary.json
-
-# 7. Commit and publish
-git add outputs/monitoring/ dashboard/data/
-git commit -m "MRS update: 2026-05 (Regime: Neutral, z +/-0.00)"
-git push origin main
-```
-
-### Short-term improvements
-
-- [ ] **Automate private repo sync**: Add a post-commit hook or Makefile target that syncs `dashboard/` to the private repo
-- [ ] **Scenario stress overlay colors**: Make stress overlays visually distinct from the 3 core lines (currently uses scenario chip color; consider adding an explicit "stress" legend)
-- [ ] **Monthly commentary template**: Add a `generate_commentary_template.py` that pre-populates the commentary JSON with a structured template (regime, top support/drag, key watch) to save analyst time
-- [ ] **Partial-month market read**: Add a `midmonth_snapshot.py` that uses available market data (SPY, VIX, BAA10YM, T10Y2Y) to project the current month's MRS as an informal interim read (clearly labeled as non-confirmed)
-
-### Medium-term
-
-- [ ] **FRED API key**: Register for a FRED API key to remove rate-limit delays in `pull_mrs_data.py` (free; avoids 3-retry 3s sleep pattern)
-- [ ] **Quarterly manifest review**: Add a reminder to review `config/refresh_manifest.json` delta arrays after each quarterly GDP release and each Fed meeting
+- [ ] **Disable the claude.ai cloud routine** (Known Issue 1) — removes the second writer and the run-log commit noise.
+- [ ] **Watch the ~2026-08-27 refresh**, when July's core PCE releases. That is the first unattended new-month publish through the repaired deploy path: `Data through` on the live footer should advance to Jul 2026 the same day.
+- [ ] **Spot-check `config/refresh_manifest.json`** after that run's auto-advance — the next_release dates are computed heuristically (first Friday / 16th / 27th).
+- [ ] **Review the manifest delta arrays quarterly**, or after a regime change or large data surprise. `forecast_as_of` records when they were last set.
+- [ ] **Consider a FRED API key** to remove the rate-limit retry pattern in `pull_mrs_data.py` (free).
 
 ---
 
 ## Quick-Start: Resuming in a New Session
 
-1. **Check git state**: `cd /tmp/Macro-Regime-Score && git log --oneline -5 && git status`
-2. **Check monitoring CSV coverage**: `tail -3 outputs/monitoring/mrs_composite_history.csv`
-3. **Check dashboard data_through**: `cat dashboard/data/metadata.json`
-4. **If new FRED data available**: Run `python src/update_mrs.py`
-5. **If only rebuilding dashboard**: Run `python src/refresh_dashboard.py`
-6. **Always validate before pushing**: Run `python src/validate_dashboard.py`
-7. **Commit and push**: See "Refresh Commands" section above
+```bash
+git clone https://github.com/ankitv25/Macro-Regime-Score.git && cd Macro-Regime-Score
+
+# 1. Is the repo healthy?
+git log --oneline -5 && git status
+
+# 2. What does the pipeline say?
+cat dashboard/data/metadata.json
+tail -3 outputs/monitoring/mrs_composite_history.csv
+cat outputs/refresh_log.md
+
+# 3. What is the public actually seeing? (these must agree with step 2)
+curl -s "https://ankitv25.github.io/Macro-Regime-Score/data/metadata.json?cb=$RANDOM"
+
+# 4. Is the automation running?
+gh run list --workflow mrs-full-refresh.yml --limit 5
+gh run list --workflow deploy-pages.yml --limit 5
+```
+
+If steps 2 and 3 disagree, the deploy is broken, not the data — `UPDATING.md` §2–3. If `data_through` is more than ~5 weeks behind the current month, the pipeline is broken — check the refresh workflow's logs.
+
+A green workflow run is not evidence the site is correct. Verify the published artifact.
 
 ---
-
 ## Architecture Decision Log
 
 | Decision | Rationale |

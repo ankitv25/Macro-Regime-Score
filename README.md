@@ -1,5 +1,7 @@
 # Macro Regime Score (MRS)
 
+> Part of the multi-asset research platform → **[ankitv25.github.io](https://ankitv25.github.io)**
+
 A transparent monthly composite indicator that classifies the US macro-financial environment into four regimes: **Expansion · Neutral · Slowdown · Contraction**.
 
 ---

@@ -21,7 +21,7 @@ import os
 import subprocess
 import sys
 from calendar import monthrange
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -35,9 +35,41 @@ MANIFEST    = CONFIG_DIR / "refresh_manifest.json"
 COMMENTARY  = DASH_DATA / "commentary.json"
 METADATA    = DASH_DATA / "metadata.json"
 COMP_CSV    = MONITORING / "mrs_composite_history.csv"
+REFRESH_LOG = REPO_ROOT / "outputs" / "refresh_log.md"
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _write_refresh_log(meta: dict, result: str, prev_through: str) -> None:
+    """Overwrite outputs/refresh_log.md with a summary of this run.
+
+    Previously only mrs_smart_agent.py wrote this file. Since the daily refresh
+    moved to GitHub Actions (mrs_gha_runner.py), nothing updated it — so the
+    human-readable log froze while the JSON kept advancing. This keeps the
+    markdown in step with the data it describes.
+    """
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    lines = [
+        f"# MRS Refresh Log — last run {stamp} UTC",
+        "",
+        f"**Path:** {result}  |  **Runner:** src/mrs_gha_runner.py (GitHub Actions)",
+        "",
+        f"**Data through:** {meta['data_through']}  |  "
+        f"**Regime:** {meta['latest_regime_confirmed']}  |  "
+        f"**Composite:** {float(meta['latest_composite_z']):+.4f}z  |  "
+        f"**Score:** {float(meta['latest_display_score']):.2f}/5",
+        "",
+        f"**Previous data_through:** {prev_through}"
+        + ("  → advanced this run." if meta["data_through"] != prev_through
+           else "  → unchanged (revisions / market data only)."),
+        "",
+        "The dashboard rebuilds daily; `data_through` only advances once every "
+        "binding release for that month has landed (core PCE, ~27th of the "
+        "following month, is the gate).",
+        "",
+    ]
+    REFRESH_LOG.write_text("\n".join(lines))
+    print(f"✓  Rolling log updated: outputs/refresh_log.md", flush=True)
 
 def _run(label: str, script: Path, extra_args: list[str] | None = None) -> bool:
     cmd = [sys.executable, str(script)] + (extra_args or [])
@@ -183,6 +215,7 @@ def main() -> int:
         # No new month: no note, no manifest advance.
         # Return 0 so the workflow diff-check runs and commits revisions if any.
         print("▶  Skipping note/manifest advance (same month).", flush=True)
+        _write_refresh_log(new_meta, "resync", prev_through)
         return 0
 
     # ── Analyst note ──────────────────────────────────────────────────────────
@@ -210,6 +243,8 @@ def main() -> int:
     manifest = _advance_manifest(manifest, new_through)
     MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n")
     print("✓  Manifest advanced.", flush=True)
+
+    _write_refresh_log(new_meta, "new_month", prev_through)
 
     # ── Final summary ─────────────────────────────────────────────────────────
     regime = new_meta["latest_regime_confirmed"]

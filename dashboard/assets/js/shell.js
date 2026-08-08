@@ -35,13 +35,38 @@ export function renderKPIs(containerId, tiles) {
 }
 
 // Standard footer string.
+//
+// Freshness has to answer two different questions, so it states both explicitly:
+//   Updated      — when this dashboard was last rebuilt (metadata.generated_at,
+//                  written in UTC by src/refresh_dashboard.py on the runner)
+//   Data through — the last month-end the composite actually scores
+// These are NOT the same date: the refresh runs daily, but a month only closes
+// once its last binding release (core PCE, ~27th of the following month) lands.
+// The old footer rendered `generated_at` at month resolution ("refreshed Jul
+// 2026"), which made a months-stale deployment indistinguishable from a fresh
+// one — the single most misleading thing on the page.
 export function footerText(metadata) {
+  const fmtDay = (iso) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d)).toLocaleString("default", {
+      day: "2-digit", month: "short", year: "numeric", timeZone: "UTC",
+    });
+  };
   const fmtMonth = (iso) => {
     const [y, m] = iso.split("-").map(Number);
     return new Date(Date.UTC(y, m - 1, 1)).toLocaleString("default", { month: "short", year: "numeric", timeZone: "UTC" });
   };
-  const refreshed = metadata.generated_at
-    ? fmtMonth(metadata.generated_at.slice(0, 10))
-    : "";
-  return `MRS ${metadata.version} · ${metadata.n_months} months · through ${fmtMonth(metadata.data_through)}${refreshed ? ` · refreshed ${refreshed}` : ""}`;
+
+  const parts = [];
+  if (metadata.generated_at) {
+    const [date, time] = metadata.generated_at.split(" ");
+    parts.push(`Updated: ${fmtDay(date)}${time ? ` ${time}` : ""} UTC`);
+  }
+  parts.push(`Data through: ${fmtMonth(metadata.data_through)} (month-end ${metadata.data_through})`);
+  // Mirrors the cron in .github/workflows/mrs-full-refresh.yml. UTC is the
+  // honest unit — GitHub cron does not shift for DST, so the ET equivalent
+  // moves an hour twice a year and is given as an approximation.
+  parts.push(`Scheduled refresh: daily 14:30 UTC (~10:30 AM ET)`);
+  parts.push(`MRS ${metadata.version} · ${metadata.n_months} months`);
+  return parts.join("  ·  ");
 }

@@ -274,5 +274,5 @@ date,composite,display_score,regime_raw,regime_confirmed,comp_1m_chg,comp_3m_chg
 2026-02-28,0.1671,3.1671,Neutral,Neutral,-0.0721,-0.0171,-0.0345,0.0414,0.2182,44.6886,flat,5,,37,0.1829,0.4671,0.6154,inflation,credit,False,,0.5494,0.3665,,0
 2026-03-31,-0.0839,2.9161,Neutral,Neutral,-0.251,-0.2733,-0.3314,-0.1372,0.163,24.0876,deteriorating,1,,38,0.4339,0.2161,0.4615,inflation,credit,False,confirmed,0.5484,0.3666,,0
 2026-04-30,0.0377,3.0377,Neutral,Neutral,0.1216,-0.2015,-0.2441,0.1078,0.1223,30.5455,deteriorating,2,,39,0.3123,0.3377,0.6154,inflation,credit,False,,0.5474,0.3666,flattening,0
-2026-05-31,0.0826,3.0826,Neutral,Neutral,0.0448,-0.0846,-0.1017,0.0331,0.1054,35.8696,flat,1,,40,0.2674,0.3826,0.6923,inflation,credit,False,,0.5465,0.3666,,0
-2026-06-30,0.1287,3.1287,Neutral,Neutral,0.0461,0.2125,-0.0607,-0.0036,0.0952,40.4332,improving,1,,41,0.2213,0.4287,0.6923,inflation,credit,False,,0.5455,0.3665,flattening,0
+2026-05-31,0.0802,3.0802,Neutral,Neutral,0.0424,-0.087,-0.1041,0.0307,0.105,35.5072,flat,1,,40,0.2698,0.3802,0.6923,inflation,credit,False,,0.5465,0.3666,,0
+2026-06-30,0.1249,3.1249,Neutral,Neutral,0.0448,0.2088,-0.0645,-0.0074,0.0942,40.0722,improving,1,,41,0.2251,0.4249,0.6154,inflation,credit,False,,0.5455,0.3665,flattening,0

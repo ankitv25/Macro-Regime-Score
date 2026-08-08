@@ -1,4 +1,5 @@
 import { loadJSON } from "./data.js";
+import { footerText } from "./shell.js";
 import { PILLARS, INDICATORS } from "./meta.js";
 import { REGIME_COLORS } from "./regime.js";
 import { signed } from "./narrative.js";
@@ -1284,8 +1285,7 @@ async function main() {
   const regime = metadata.latest_regime_confirmed;
   const el = document.getElementById("appbar-status");
   if (el) el.textContent = `MRS ${regime} · ${_dataThrough?.slice(0, 7)} · ${metadata.version}`;
-  document.getElementById("status-footer").textContent =
-    `MRS ${metadata.version} · data through ${_dataThrough} · generated ${metadata.generated_at}`;
+  document.getElementById("status-footer").textContent = footerText(metadata);
 }
 
 main().catch(err => {

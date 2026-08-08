@@ -13,13 +13,20 @@ name: MRS Full Refresh
 #   resync     — same month but may contain FRED revisions / market updates
 #
 # Triggers:
-#   - Daily at 06:30 UTC (catches NFP ~1st Fri, IP ~16th, PCE ~27th)
+#   - Daily at 14:30 UTC (catches NFP ~1st Fri, IP ~16th, PCE ~27th)
 #   - Manual via workflow_dispatch (for on-demand or catch-up runs)
+#
+# Why 14:30 UTC and not earlier: the binding macro releases land at 08:30 ET
+# (NFP, core PCE, GDP) and 09:15 ET (industrial production). The previous
+# 06:30 UTC slot is 02:30 ET — ahead of every one of them — so a month that
+# became available on day D was not picked up until day D+1. 14:30 UTC is
+# ~10:30 ET in EDT / ~09:30 ET in EST (GitHub cron is UTC and does not shift
+# for DST), which clears all four release times year-round.
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 6 * * *'
+    - cron: '30 14 * * *'
 
 permissions:
   contents: write
@@ -103,6 +110,7 @@ jobs:
 
           git add \
             outputs/monitoring/ \
+            outputs/refresh_log.md \
             dashboard/data/ \
             config/refresh_manifest.json
 

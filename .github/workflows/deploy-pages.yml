@@ -5,6 +5,16 @@ on:
     branches: [main]
     paths:
       - 'dashboard/**'
+  # Commits made by "MRS Full Refresh" use the built-in GITHUB_TOKEN, and GitHub
+  # deliberately does NOT fire `push` events for those — so the refresh would
+  # update main every day while the live site stayed frozen. workflow_run fires
+  # on the *completion of the refresh workflow* instead, which is not suppressed.
+  # It runs unconditionally (deploy is idempotent and ~20s), so the site also
+  # self-heals if any earlier deploy was missed.
+  workflow_run:
+    workflows: ["MRS Full Refresh"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -23,7 +33,17 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      # Explicit ref matters: on workflow_run, the default checkout resolves to
+      # the SHA the *triggering* run started from — i.e. main BEFORE the refresh
+      # pushed its data commit. Pinning to main deploys what was actually pushed.
       - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Show what is being deployed
+        run: |
+          git log -1 --format='deploying %h %s (%ai)'
+          echo "--- dashboard/data/metadata.json ---"
+          cat dashboard/data/metadata.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

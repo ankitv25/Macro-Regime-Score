@@ -38,7 +38,7 @@ import argparse
 import json
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -207,7 +207,10 @@ def build_metadata_json(comp: pd.DataFrame, dry_run: bool) -> None:
     last = comp.dropna(subset=["composite"]).iloc[-1]
     meta = {
         "version": "v2.1",
-        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        # UTC, not runner-local: the dashboard footer labels this "UTC", and a
+        # local run must not stamp a local clock time under that label. Format
+        # is unchanged so existing consumers (mrs_smart_agent) still parse it.
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
         "data_from": str(comp["date"].min().date()),
         "data_through": str(last["date"].date()),
         "n_months": str(int(comp["composite"].notna().sum())),

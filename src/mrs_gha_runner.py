@@ -50,7 +50,13 @@ def _write_refresh_log(meta: dict, result: str, prev_through: str) -> None:
     """
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     lines = [
-        f"# MRS Refresh Log — last run {stamp} UTC",
+        # "last published run", not "last run": the workflow only commits when
+        # real_changes != 0, so a no-op run regenerates this file and discards
+        # it. That is deliberate — committing it daily would reintroduce the
+        # timestamp-churn commits the 2026-06-23 audit removed. The heading has
+        # to say what the date actually means, or this file becomes another
+        # thing that looks fresher than it is.
+        f"# MRS Refresh Log — last published run {stamp} UTC",
         "",
         f"**Path:** {result}  |  **Runner:** src/mrs_gha_runner.py (GitHub Actions)",
         "",

@@ -1,15 +1,9 @@
-# MRS Refresh Log — last run 2026-07-06 14:07
+# MRS Refresh Log — last published run 2026-08-12 15:29 UTC
 
-**Path:** REBUILD_ONLY  |  **Success:** Yes  |  **Validated:** Yes
+**Path:** resync  |  **Runner:** src/mrs_gha_runner.py (GitHub Actions)
 
-**Data through:** 2026-05-31  |  **Regime:** Neutral  |  **Composite:** +0.0606z
+**Data through:** 2026-06-30  |  **Regime:** Neutral  |  **Composite:** +0.1257z  |  **Score:** 3.13/5
 
-**Reason:** 1 binding indicator(s) released (g_nfp) but 5 pending (g_ipman, g_gdp, g_serv, i_pce_dev, i_pce_mom) — rebuilding JSON from existing CSVs; full update available once all binding indicators release
+**Previous data_through:** 2026-06-30  → unchanged (revisions / market data only).
 
-**Critical:** 1 item(s)
-- 4 active flags — review pillar detail; composite may be obscuring cross-pillar deterioration
-
-**Watch:** 1 item(s)
-- Upgrade watch: 0.289z from threshold (alert at 0.1z)
-
-Full log: `agent_run_log_2026-07-06_140721.md`
+The dashboard rebuilds daily; `data_through` only advances once every binding release for that month has landed (core PCE, ~27th of the following month, is the gate).

@@ -1,4 +1,4 @@
-# MRS Refresh Log — last published run 2026-08-31 20:15 UTC
+# MRS Refresh Log — last published run 2026-09-01 17:54 UTC
 
 **Path:** resync  |  **Runner:** src/mrs_gha_runner.py (GitHub Actions)
 

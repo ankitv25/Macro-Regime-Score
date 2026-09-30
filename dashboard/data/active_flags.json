@@ -1,3 +1,8 @@
 [
-
+  {
+    "level":"indicator",
+    "name":"s_vix",
+    "flag":"improvement warning",
+    "magnitude":0.503
+  }
 ]

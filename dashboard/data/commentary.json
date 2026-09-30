@@ -19,5 +19,10 @@
     "analyst_note": "Neutral confirmed for month 42 (composite +0.140z, display 3.1/5) with improving 3-month momentum (+0.101z). Breadth at 62%: primary drag is <strong>inflation</strong>, main support from <strong>credit</strong>. The composite sits 0.21z from the upgrade boundary; the more likely regime change \u2014 if it comes \u2014 would arrive through the inflation pillar rather than a broad deterioration.",
     "author": "MRS Agent",
     "as_of": "2026-08-26"
+  },
+  "2026-08-31": {
+    "analyst_note": "Neutral confirmed for month 43 (composite +0.169z, display 3.2/5) with broadly flat 3-month momentum (+0.017z). Breadth at 62%: primary drag is <strong>inflation</strong>, main support from <strong>stress</strong>. The composite sits 0.18z from the upgrade boundary; the more likely regime change \u2014 if it comes \u2014 would arrive through the inflation pillar rather than a broad deterioration.",
+    "author": "MRS Agent",
+    "as_of": "2026-09-30"
   }
 }

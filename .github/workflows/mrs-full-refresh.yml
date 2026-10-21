@@ -124,3 +124,26 @@ jobs:
           steps.pipeline.outcome == 'success' &&
           (steps.diff.outputs.real_changes == '0' || steps.diff.outputs.real_changes == '')
         run: echo "Pipeline ran clean — no real data changes vs committed state. Nothing to publish."
+
+      # Tell the homepage (ankitv25.github.io) to sync its figures, only when this run published new data.
+      # The payload carries the month just published; the homepage polls the live feed until the Pages
+      # deploy above serves it. SITE_DISPATCH_TOKEN is a fine-grained PAT for ankitv25.github.io only
+      # (Contents: read and write). A missing token or failed call only warns: the homepage's weekday
+      # schedule catches up.
+      - name: Notify the homepage
+        if: >
+          success() &&
+          steps.diff.outputs.real_changes != '0' &&
+          steps.diff.outputs.real_changes != ''
+        env:
+          TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::SITE_DISPATCH_TOKEN is not set — the homepage will catch up on its weekday schedule"; exit 0
+          fi
+          ASOF=$(python3 -c "import json;print(json.load(open('dashboard/data/metadata.json'))['data_through'][:10])")
+          curl -fsS -X POST https://api.github.com/repos/ankitv25/ankitv25.github.io/dispatches \
+            -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+            -d "{\"event_type\":\"stats-updated\",\"client_payload\":{\"source\":\"mrs\",\"asof\":\"$ASOF\"}}" \
+            && echo "homepage sync requested for MRS $ASOF" \
+            || echo "::warning::could not reach the homepage — it will catch up on its weekday schedule"

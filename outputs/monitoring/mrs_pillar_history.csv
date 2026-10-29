@@ -282,8 +282,9 @@ date,pillar,score,contribution,score_3m_chg,score_6m_chg,score_12m_chg,score_tre
 2026-04-30,growth,0.1724,0.0517,0.1287,0.0374,0.064,0.0048,53.0249,improving,2,,0.75,Neutral,False
 2026-05-31,growth,0.1236,0.0371,0.1189,0.1836,0.0696,0.0355,46.8085,improving,3,,0.75,Neutral,False
 2026-06-30,growth,0.0949,0.0285,0.0938,0.2276,0.0196,0.0734,42.4028,flat,1,,0.5,Neutral,False
-2026-07-31,growth,0.0408,0.0122,-0.1316,-0.003,-0.2967,0.0729,33.8028,deteriorating,1,,0.5,Neutral,False
-2026-08-31,growth,-0.0624,-0.0187,-0.186,-0.0671,-0.1773,0.0617,23.5088,deteriorating,2,,0.5,Neutral,False
+2026-07-31,growth,0.2036,0.0611,0.0312,0.1598,-0.1339,0.1,58.8028,flat,2,,0.75,Neutral,False
+2026-08-31,growth,0.1075,0.0322,-0.0161,0.1028,-0.0074,0.1172,43.8596,flat,3,,0.75,Neutral,False
+2026-09-30,growth,0.1078,0.0323,0.0129,0.1067,-0.0579,0.1349,44.0559,flat,4,,0.75,Neutral,False
 2003-06-30,inflation,-0.2636,-0.0395,,,,,100.0,,42,,0.5,N/A,False
 2003-07-31,inflation,-0.184,-0.0276,,,,,100.0,,43,,0.5,Expansion,False
 2003-08-31,inflation,-0.3478,-0.0522,,,,,33.3333,,44,,0.5,Expansion,False
@@ -561,8 +562,9 @@ date,pillar,score,contribution,score_3m_chg,score_6m_chg,score_12m_chg,score_tre
 2026-04-30,inflation,-0.6003,-0.09,-0.3569,-0.5707,-0.8247,-0.2911,20.7273,deteriorating,4,deterioration,0.0,Neutral,False
 2026-05-31,inflation,-0.7069,-0.106,-0.44,-0.7551,-0.7295,-0.4169,17.029,deteriorating,5,deterioration,0.0,Neutral,False
 2026-06-30,inflation,-0.372,-0.0558,0.1578,-0.2179,-0.3621,-0.4532,32.13,improving,1,,0.0,Neutral,False
-2026-07-31,inflation,-0.2172,-0.0326,0.3831,0.0262,-0.0981,-0.4489,44.6043,improving,2,,0.0,Neutral,False
-2026-08-31,inflation,-0.2352,-0.0353,0.4717,0.0316,-0.1108,-0.4436,42.2939,improving,3,,0.0,Neutral,False
+2026-07-31,inflation,-0.2361,-0.0354,0.3643,0.0073,-0.117,-0.452,42.446,improving,2,,0.0,Neutral,False
+2026-08-31,inflation,-0.2779,-0.0417,0.429,-0.0111,-0.1535,-0.4539,37.276,improving,3,,0.0,Neutral,False
+2026-09-30,inflation,-0.2775,-0.0416,0.0945,0.2524,0.0342,-0.4118,37.5,flat,1,,0.5,Neutral,False
 2001-12-31,liquidity,1.2735,0.191,,,,,100.0,,24,,1.0,N/A,False
 2002-01-31,liquidity,1.3572,0.2036,,,,,100.0,,25,,1.0,N/A,False
 2002-02-28,liquidity,1.4183,0.2127,,,,,100.0,,26,,1.0,N/A,False

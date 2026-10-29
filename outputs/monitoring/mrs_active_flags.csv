@@ -1,2 +1,4 @@
 level,name,flag,magnitude
-indicator,s_vix,improvement warning,0.503
+composite,MRS,regime-change watch (upgrade),0.099
+indicator,i_pce_mom,improvement warning,0.52
+indicator,s_vix,improvement warning,1.236

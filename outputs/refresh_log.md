@@ -1,8 +1,8 @@
-# MRS Refresh Log — last published run 2026-10-31 18:40 UTC
+# MRS Refresh Log — last published run 2026-11-02 22:50 UTC
 
 **Path:** resync  |  **Runner:** src/mrs_gha_runner.py (GitHub Actions)
 
-**Data through:** 2026-09-30  |  **Regime:** Neutral  |  **Composite:** +0.2514z  |  **Score:** 3.25/5
+**Data through:** 2026-09-30  |  **Regime:** Neutral  |  **Composite:** +0.2513z  |  **Score:** 3.25/5
 
 **Previous data_through:** 2026-09-30  → unchanged (revisions / market data only).
 

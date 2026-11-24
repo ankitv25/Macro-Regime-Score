@@ -1,11 +1,5 @@
 [
   {
-    "level":"composite",
-    "name":"MRS",
-    "flag":"regime-change watch (upgrade)",
-    "magnitude":0.096
-  },
-  {
     "level":"indicator",
     "name":"i_pce_mom",
     "flag":"improvement warning",

@@ -1,14 +1,3 @@
 [
-  {
-    "level":"indicator",
-    "name":"i_pce_mom",
-    "flag":"improvement warning",
-    "magnitude":0.52
-  },
-  {
-    "level":"indicator",
-    "name":"s_vix",
-    "flag":"improvement warning",
-    "magnitude":1.236
-  }
+
 ]
